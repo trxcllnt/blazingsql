@@ -104,7 +104,6 @@ RUN git clone --depth 1 --branch fea/rapids-cmake https://github.com/trxcllnt/bl
  && cmake -GNinja \
     -S /repos/blazingsql/engine \
     -B /repos/blazingsql/engine/build \
-    -D blazingsql-io_ROOT=/repos/blazingsql/io/build \
     -D DISABLE_DEPRECATION_WARNING=ON \
     -D BUILD_TESTS=OFF \
     -D BUILD_BENCHMARKS=OFF \
@@ -116,15 +115,46 @@ RUN git clone --depth 1 --branch fea/rapids-cmake https://github.com/trxcllnt/bl
  && cmake --build /repos/blazingsql/engine/build \
  && cmake --build /repos/blazingsql/engine/build -j$(nproc) -v --target install
 
+# Build and install pyblazing, rmm, pyarrow, and cudf
 RUN cd /repos/blazingsql/pyblazing \
- && pip install -r requirements_dev.txt \
+ && pip install --upgrade -r requirements_dev.txt \
     --target "$INSTALL_PREFIX/lib/python3.8/dist-packages" \
  && env PARALLEL_LEVEL=$(nproc) \
     python setup.py build_ext -j$(nproc) --inplace \
  && python setup.py install --single-version-externally-managed --record=record.txt \
- && rm -rf /repos/blazingsql
+ && cd / && rm -rf /repos/blazingsql \
+ \
+ && git clone --depth 1 --branch branch-21.08 https://github.com/rapidsai/rmm.git /repos/rmm \
+ && cd /repos/rmm/python \
+ && pip install --upgrade -r dev_requirements.txt \
+    --target "$INSTALL_PREFIX/lib/python3.8/dist-packages" \
+ && env PARALLEL_LEVEL=$(nproc) \
+    python setup.py build_ext -j$(nproc) --inplace \
+ && python setup.py install --single-version-externally-managed --record=record.txt \
+ && cd / && rm -rf /repos/rmm \
+ \
+ && git clone --depth 1 --branch apache-arrow-1.0.1 https://github.com/apache/arrow.git /repos/arrow \
+ && cd /repos/arrow/python \
+ && env PARALLEL_LEVEL=$(nproc) \
+        PYARROW_PARALLEL=$(nproc) \
+        PYARROW_BUILD_TYPE=Release \
+        PYARROW_CMAKE_GENERATOR=Ninja \
+    python setup.py build_ext -j$(nproc) --inplace \
+ && python setup.py install --single-version-externally-managed --record=record.txt \
+ && cd / && rm -rf /repos/arrow \
+ \
+ && git clone --depth 1 --branch branch-21.08 https://github.com/rapidsai/cudf.git /repos/cudf \
+ && cd /repos/cudf/python/cudf \
+ && pip install --upgrade \
+    -r requirements/cuda-11.2/dev_requirements.txt \
+    --target "$INSTALL_PREFIX/lib/python3.8/dist-packages" \
+ && env PARALLEL_LEVEL=$(nproc) \
+    python setup.py build_ext -j$(nproc) --inplace \
+ && python setup.py install --single-version-externally-managed --record=record.txt \
+ && cd / && rm -rf /repos/cudf
 
-FROM nvidia/cuda:${CUDA_VER}-runtime-ubuntu${UBUNTU_VERSION}
+
+FROM nvidia/cuda:${CUDA_VERSION}-runtime-ubuntu${UBUNTU_VERSION}
 LABEL Description="blazingdb/blazingsql is the official BlazingDB environment for BlazingSQL on NIVIDA RAPIDS." Vendor="BlazingSQL" Version="0.4.0"
 
 SHELL ["/bin/bash", "-c"]
@@ -144,6 +174,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
       curl libssl-dev \
       python{3.8,3.8-distutils} \
       libboost-{regex,system,filesystem}-dev \
+      libb2-dev libzstd-dev libibverbs-dev librdmacm-dev libnuma-dev libhwloc-dev \
  && apt autoremove -y && apt clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
  && update-alternatives --remove-all python >/dev/null 2>&1 || true \
