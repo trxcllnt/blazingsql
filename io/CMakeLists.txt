@@ -16,23 +16,60 @@
 # limitations under the License.
 #=============================================================================
 
-PROJECT(blazingdb-io)
+cmake_minimum_required(VERSION 3.20.1 FATAL_ERROR)
 
-cmake_minimum_required(VERSION 3.11)
+include(FetchContent)
+FetchContent_Declare(
+  rapids-cmake
+  GIT_REPOSITORY https://github.com/rapidsai/rapids-cmake.git
+  GIT_TAG        origin/branch-21.08
+  )
+FetchContent_MakeAvailable(rapids-cmake)
+include(rapids-cmake)
+include(rapids-cpm)
+include(rapids-cuda)
+include(rapids-export)
+include(rapids-find)
+
+rapids_cuda_init_architectures(BLAZINGSQL_IO)
+
+PROJECT(BLAZINGSQL_IO VERSION 21.08.00 LANGUAGES CXX)
+
+# Write the version header
+include(cmake/modules/version.cmake)
+write_version()
+
+##############################################################################
+# - build type ---------------------------------------------------------------
+
+# Set a default build type if none was specified
+rapids_cmake_build_type(Release)
+
+# this is needed for clang-tidy runs
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/" ${CMAKE_MODULE_PATH})
 message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+##############################################################################
+# - User Options  ------------------------------------------------------------
 
 option(GCS_SUPPORT "Enables support for GCS fileSystem" ON)
 option(S3_SUPPORT "Enables support for S3 fileSystem" ON)
+option(${PROJECT_NAME}_USE_ARROW_STATIC "Build and statically link Arrow libraries" OFF)
+
+message(STATUS "GCS_SUPPORT: ${GCS_SUPPORT}")
+message(STATUS "S3_SUPPORT: ${S3_SUPPORT}")
+message(STATUS "${PROJECT_NAME}_USE_ARROW_STATIC: ${${PROJECT_NAME}_USE_ARROW_STATIC}")
 
 ###################################################################################################
 # - conda environment -----------------------------------------------------------------------------
 
 if ("$ENV{CONDA_BUILD}" STREQUAL "1")
-    set(CMAKE_SYSTEM_PREFIX_PATH "$ENV{BUILD_PREFIX};$ENV{PREFIX};${CMAKE_SYSTEM_PREFIX_PATH}")
-    message(STATUS "Conda build detected, CMAKE_SYSTEM_PREFIX_PATH set to: ${CMAKE_SYSTEM_PREFIX_PATH}")
+    set(CMAKE_PREFIX_PATH "$ENV{BUILD_PREFIX};$ENV{PREFIX};${CMAKE_PREFIX_PATH}")
+    set(CONDA_INCLUDE_DIRS "$ENV{BUILD_PREFIX}/include" "$ENV{PREFIX}/include")
+    set(CONDA_LINK_DIRS "$ENV{BUILD_PREFIX}/lib" "$ENV{PREFIX}/lib")
+    message(STATUS "Conda build detected, CMAKE_PREFIX_PATH set to: ${CMAKE_PREFIX_PATH}")
 
     set(ENV{PKG_CONFIG_PATH} $ENV{BUILD_PREFIX}/lib/pkgconfig/) # used by find libcurl
     set(ENV{LD_LIBRARY_PATH} $ENV{BUILD_PREFIX}/lib/) # to link the tests correctly against libcurl.so
@@ -42,8 +79,10 @@ if ("$ENV{CONDA_BUILD}" STREQUAL "1")
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} $ENV{BUILD_PREFIX}/lib/cmake)
 
 elseif (DEFINED ENV{CONDA_PREFIX})
-    set(CMAKE_SYSTEM_PREFIX_PATH "$ENV{CONDA_PREFIX};${CMAKE_SYSTEM_PREFIX_PATH}")
-    message(STATUS "Conda environment detected, CMAKE_SYSTEM_PREFIX_PATH set to: ${CMAKE_SYSTEM_PREFIX_PATH}")
+    set(CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX};${CMAKE_PREFIX_PATH}")
+    set(CONDA_INCLUDE_DIRS "$ENV{CONDA_PREFIX}/include")
+    set(CONDA_LINK_DIRS "$ENV{CONDA_PREFIX}/lib")
+    message(STATUS "Conda environment detected, CMAKE_PREFIX_PATH set to: ${CMAKE_PREFIX_PATH}")
 
     set(ENV{PKG_CONFIG_PATH} $ENV{CONDA_PREFIX}/lib/pkgconfig/) # used by find libcurl
     set(ENV{LD_LIBRARY_PATH} $ENV{CONDA_PREFIX}/lib/) # to link the tests correctly against libcurl.so
@@ -54,39 +93,58 @@ elseif (DEFINED ENV{CONDA_PREFIX})
 
 endif ()
 
-
 #########################################################################3
 # - compiler stuff ------------------
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+set(${PROJECT_NAME}_CXX_FLAGS "")
+set(${PROJECT_NAME}_CUDA_FLAGS "")
+set(${PROJECT_NAME}_CXX_DEFINITIONS "")
+set(${PROJECT_NAME}_CUDA_DEFINITIONS "")
+
+list(APPEND ${PROJECT_NAME}_CXX_FLAGS -Wall -Wextra -Wno-unknown-pragmas)
+
+# set(CMAKE_CXX_STANDARD 17)
+# set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+
+##############################################################################
+# - dependencies -------------------------------------------------------------
+
+# add third party dependencies using CPM
+rapids_cpm_init()
+
+# find absl
+include(cmake/thirdparty/get_absl.cmake)
+# find arrow
+include(cmake/thirdparty/get_arrow.cmake)
 
 # Include CMake modules
 include(FeatureSummary)
 include(CheckIncludeFiles)
 include(CheckLibraryExists)
-include(CTest)
+# include(CTest)
 
 # TODO percy jp mario we don't need curl unless we use the storages
-add_definitions( -DCURL_STATICLIB )
 find_package(CURL REQUIRED)
+# add_definitions( -DCURL_STATICLIB )
+list(APPEND ${PROJECT_NAME}_CXX_DEFINITIONS CURL_STATICLIB)
 
-# BEGIN find arrow
-find_path(ARROW_INCLUDE_DIR "arrow" HINTS "$ENV{ARROW_ROOT}/include")
-find_library(ARROW_LIB "arrow" NAMES libarrow HINTS "$ENV{ARROW_ROOT}/lib" "$ENV{ARROW_ROOT}/build")
-find_library(ARROW_CUDA_LIB "arrow_cuda" NAMES libarrow_cuda HINTS "$ENV{ARROW_ROOT}/lib" "$ENV{ARROW_ROOT}/build")
-message(STATUS "ARROW: ARROW_INCLUDE_DIR set to ${ARROW_INCLUDE_DIR}")
-message(STATUS "ARROW: ARROW_LIB set to ${ARROW_LIB}")
-message(STATUS "ARROW: ARROW_CUDA_LIB set to ${ARROW_CUDA_LIB}")
-add_library(arrow SHARED IMPORTED ${ARROW_LIB})
-add_library(arrow_cuda SHARED IMPORTED ${ARROW_CUDA_LIB})
+# # BEGIN find arrow
+# find_path(ARROW_INCLUDE_DIR "arrow" HINTS "$ENV{ARROW_ROOT}/include")
+# find_library(ARROW_LIB "arrow" NAMES libarrow HINTS "$ENV{ARROW_ROOT}/lib" "$ENV{ARROW_ROOT}/build")
+# find_library(ARROW_CUDA_LIB "arrow_cuda" NAMES libarrow_cuda HINTS "$ENV{ARROW_ROOT}/lib" "$ENV{ARROW_ROOT}/build")
+# message(STATUS "ARROW: ARROW_INCLUDE_DIR set to ${ARROW_INCLUDE_DIR}")
+# message(STATUS "ARROW: ARROW_LIB set to ${ARROW_LIB}")
+# message(STATUS "ARROW: ARROW_CUDA_LIB set to ${ARROW_CUDA_LIB}")
+# add_library(arrow SHARED IMPORTED ${ARROW_LIB})
+# add_library(arrow_cuda SHARED IMPORTED ${ARROW_CUDA_LIB})
 
-if(ARROW_INCLUDE_DIR AND ARROW_LIB AND ARROW_CUDA_LIB)
-  set_target_properties(arrow PROPERTIES IMPORTED_LOCATION ${ARROW_LIB})
-  set_target_properties(arrow_cuda PROPERTIES IMPORTED_LOCATION ${ARROW_CUDA_LIB})
-endif(ARROW_INCLUDE_DIR AND ARROW_LIB AND ARROW_CUDA_LIB)
-# END find arrow
+# if(ARROW_INCLUDE_DIR AND ARROW_LIB AND ARROW_CUDA_LIB)
+#   set_target_properties(arrow PROPERTIES IMPORTED_LOCATION ${ARROW_LIB})
+#   set_target_properties(arrow_cuda PROPERTIES IMPORTED_LOCATION ${ARROW_CUDA_LIB})
+# endif(ARROW_INCLUDE_DIR AND ARROW_LIB AND ARROW_CUDA_LIB)
+# # END find arrow
 
 set(FILESYSTEM_SRC_FILES
     ${PROJECT_SOURCE_DIR}/src/FileSystem/FileSystemType.cpp
@@ -147,11 +205,9 @@ if(S3_SUPPORT)
         ${PROJECT_SOURCE_DIR}/src/FileSystem/private/S3FileSystem_p.cpp)
     set(S3_LIBRARY aws-cpp-sdk-core aws-cpp-sdk-s3 aws-cpp-sdk-s3-encryption)
 endif()
+# link_directories($ENV{CONDA_PREFIX}/lib)
 
-include_directories(blazingdb-io ${PROJECT_SOURCE_DIR}/src $ENV{CONDA_PREFIX}/include "${ARROW_INCLUDE_DIR}")
-link_directories($ENV{CONDA_PREFIX}/lib)
-
-add_library(blazingdb-io SHARED
+add_library(blazingsql-io SHARED
     ${FILESYSTEM_SRC_FILES}
     ${GCS_FILESYSTEM_SRC_FILES}
     ${S3_FILESYSTEM_SRC_FILES}
@@ -160,34 +216,168 @@ add_library(blazingdb-io SHARED
     ${EXCEPTION_SRC_FILES}
 )
 
-target_link_libraries(
-    blazingdb-io
+set_target_properties(blazingsql-io
+    PROPERTIES BUILD_RPATH                         "\$ORIGIN"
+               INSTALL_RPATH                       "\$ORIGIN"
+               # set target compile options
+               CXX_STANDARD                        17
+               CXX_STANDARD_REQUIRED               ON
+               CUDA_STANDARD                       17
+               CUDA_STANDARD_REQUIRED              ON
+               POSITION_INDEPENDENT_CODE           ON
+               INTERFACE_POSITION_INDEPENDENT_CODE ON
+)
+
+target_compile_options(blazingsql-io
+            PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${BLAZINGSQL_IO_CXX_FLAGS}>"
+                    "$<$<COMPILE_LANGUAGE:CUDA>:${BLAZINGSQL_IO_CUDA_FLAGS}>"
+)
+
+target_compile_definitions(blazingsql-io
+            PUBLIC "$<$<COMPILE_LANGUAGE:CXX>:${BLAZINGSQL_IO_CXX_DEFINITIONS}>"
+                   "$<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:CUDA>:${BLAZINGSQL_IO_CUDA_DEFINITIONS}>>"
+)
+
+target_link_libraries(blazingsql-io PRIVATE
     ${CURL_LIBRARIES}
     ${GCS_LIBRARY}
     ${S3_LIBRARY}
-    arrow
-
-    libabsl_time.so
-    libabsl_str_format_internal.so
-    libabsl_strings.so
-    libabsl_strings_internal.so
-    libabsl_time_zone.so
-    libabsl_base.so
-    libabsl_int128.so
-    libabsl_raw_logging_internal.so
-    libabsl_spinlock_wait.so
-    libabsl_bad_variant_access.so
-    libabsl_civil_time.so
+    ${ARROW_LIBRARIES}
+    absl::time
+    absl::str_format_internal
+    absl::strings
+    absl::strings_internal
+    absl::time_zone
+    absl::base
+    absl::int128
+    absl::raw_logging_internal
+    absl::spinlock_wait
+    absl::bad_variant_access
+    absl::civil_time
 )
 
-# Install target and headers
-install(TARGETS blazingdb-io DESTINATION lib)
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/ DESTINATION include/blazingdb/io FILES_MATCHING PATTERN "*.h")
+# target_include_directories(blazingsql-io
+#     ${PROJECT_SOURCE_DIR}/src
+#     $ENV{CONDA_PREFIX}/include
+#     "${ARROW_INCLUDE_DIR}")
 
-# Tests
-if(BUILD_TESTING)
-    add_subdirectory(tests)
+# Specify include paths for the current target and dependents
+target_include_directories(blazingsql-io
+           PUBLIC      "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>"
+                       "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
+           PRIVATE     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>"
+           INTERFACE   "$<INSTALL_INTERFACE:include>"
+                       "$<INSTALL_INTERFACE:include/blazingdb/io>")
+
+# Add Conda library paths if specified
+if(CONDA_LINK_DIRS)
+    target_link_directories(blazingsql-io PUBLIC "$<BUILD_INTERFACE:${CONDA_LINK_DIRS}>")
 endif()
+
+# Add Conda include paths if specified
+if(CONDA_INCLUDE_DIRS)
+    target_include_directories(blazingsql-io PUBLIC "$<BUILD_INTERFACE:${CONDA_INCLUDE_DIRS}>")
+endif()
+
+add_library(blazingdb::io ALIAS blazingsql-io)
+
+# # Install target and headers
+# install(TARGETS blazingsql-io DESTINATION lib)
+# install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/ DESTINATION include/blazingdb/io FILES_MATCHING PATTERN "*.h")
+
+# # Tests
+# if(BUILD_TESTING)
+#     add_subdirectory(tests)
+# endif()
+
+###################################################################################################
+# - install targets -------------------------------------------------------------------------------
+
+set(BLAZINGSQL_IO_TARGETS
+      blazingsql-io)
+
+install(TARGETS
+          ${BLAZINGSQL_IO_TARGETS}
+        DESTINATION
+          lib
+        EXPORT
+          blazingsql-io-exports)
+
+file(COPY ${PROJECT_SOURCE_DIR}/src/
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/blazingdb/io
+     FILES_MATCHING PATTERN "*.h")
+
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
+        DESTINATION include
+        FILES_MATCHING PATTERN "*.h")
+
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
+        DESTINATION include
+        FILES_MATCHING PATTERN "*.hpp")
+
+if(TARGET arrow_shared)
+    get_target_property(arrow_is_imported arrow_shared IMPORTED)
+    if(NOT arrow_is_imported)
+        export(TARGETS arrow_shared arrow_cuda_shared
+            FILE ${BLAZINGSQL_IO_BINARY_DIR}/blazingsql-io-arrow-targets.cmake
+            NAMESPACE blazingdb::)
+    endif()
+elseif(TARGET arrow_static)
+    get_target_property(arrow_is_imported arrow_static IMPORTED)
+    if(NOT arrow_is_imported)
+        export(TARGETS arrow_static arrow_cuda_static
+            FILE ${BLAZINGSQL_IO_BINARY_DIR}/blazingsql-io-arrow-targets.cmake
+            NAMESPACE blazingdb::)
+    endif()
+endif()
+
+##################################################################################################
+# - install export -------------------------------------------------------------------------------
+set(doc_string
+[=[
+Provide targets for BlazingSQL IO.
+
+]=])
+
+rapids_export(INSTALL blazingsql-io
+    EXPORT_SET blazingsql-io-exports
+    GLOBAL_TARGETS blazingsql-io
+    NAMESPACE blazingdb::
+    DOCUMENTATION doc_string
+    )
+
+################################################################################################
+# - build export -------------------------------------------------------------------------------
+set(code_string [=[
+# find arrow
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/blazingsql-io-arrow-targets.cmake")
+  include("${CMAKE_CURRENT_LIST_DIR}/blazingsql-io-arrow-targets.cmake")
+else()
+  if(NOT DEFINED BLAZINGSQL_IO_USE_ARROW_STATIC)
+    set(BLAZINGSQL_IO_USE_ARROW_STATIC OFF)
+  endif()
+  if (NOT DEFINED S3_SUPPORT)
+    set(S3_SUPPORT OFF)
+  endif()
+  include(@BLAZINGSQL_IO_SOURCE_DIR@/cmake/thirdparty/CUDF_GetArrow.cmake)
+endif()
+]=])
+
+rapids_export(BUILD blazingsql-io
+    EXPORT_SET blazingsql-io-exports
+    GLOBAL_TARGETS blazingsql-io
+    NAMESPACE blazingdb::
+    DOCUMENTATION doc_string
+    FINAL_CODE_BLOCK code_string
+    )
 
 # Print the project summary
 feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)
+
+# if(CMAKE_EXPORT_COMPILE_COMMANDS)
+#     # Create a symlink to compile_commands.json for the llvm-vs-code-extensions.vscode-clangd plugin
+#     execute_process(COMMAND
+#         ${CMAKE_COMMAND} -E create_symlink
+#         ${CMAKE_CURRENT_BINARY_DIR}/compile_commands.json
+#         ${CMAKE_CURRENT_SOURCE_DIR}/compile_commands.json)
+# endif()

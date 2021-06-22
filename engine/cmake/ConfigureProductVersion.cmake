@@ -26,13 +26,13 @@ function(configure_bsqlengine_config_header)
         string(REPLACE "\"" "" OS_RELEASE ${OS_RELEASE})
     endif()
 
-    configure_file(${PROJECT_SOURCE_DIR}/bsqlengine_config.h.cmake ${PROJECT_BINARY_DIR}/bsqlengine_config.h)
+    configure_file(${PROJECT_SOURCE_DIR}/bsqlengine_config.h.cmake ${PROJECT_BINARY_DIR}/include/blazingdb/engine/bsqlengine_config.h)
 endfunction()
 
 
 # This target will update the git (and other info from CLIs) information in the header git-config-bsql-engine.h, see config-bsql-engine.h.cmake
-add_custom_target(UpdateBSQLEngineInternalConfig
-    COMMAND bash ${PROJECT_SOURCE_DIR}/update_bsqlengine_config.sh "${PROJECT_BINARY_DIR}"
+execute_process(COMMAND bash ${PROJECT_SOURCE_DIR}/update_bsqlengine_config.sh
+                             "${PROJECT_BINARY_DIR}/include/blazingdb/engine"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/..)
 
 #execute_process(
@@ -46,10 +46,10 @@ configure_bsqlengine_config_header()
 #add_custom_command(
 #    TARGET blazingsql-engine
 #    PRE_BUILD
-#    COMMAND 
+#    COMMAND
 #    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../
 #)
 
 # NOTE percy when build ral cpp
 # Each time we build the target we update the config-bsql-engine.h file and thus always have the last git commit hash (without run cmake again)
-add_dependencies(blazingsql-engine UpdateBSQLEngineInternalConfig)
+# add_dependencies(blazingsql-engine UpdateBSQLEngineInternalConfig)

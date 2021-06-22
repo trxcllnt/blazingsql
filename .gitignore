@@ -102,3 +102,5 @@ powerpc/developer/blazingsql.tar.gz
 docsrc/build/
 docsrc/source/doxyfiles/
 docsrc/source/xml
+
+compile_commands.json
