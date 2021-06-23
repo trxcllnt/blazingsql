@@ -91,8 +91,9 @@ ENV PATH="$PATH:$CUDA_HOME/bin:$INSTALL_PREFIX/bin"
 ENV PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$INSTALL_PREFIX/lib/python3.8/dist-packages"
 ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$CUDA_HOME/lib:$CUDA_HOME/lib64:$INSTALL_PREFIX/lib"
 
-# Build and install numpy, blazingsql-io, libarrow, blazingsql-engine, and libcudf from source
-RUN pip install --upgrade numpy \
+# Build and install blazingsql-io, libarrow, blazingsql-engine, and libcudf from source
+RUN export PARALLEL_LEVEL=$(nproc) \
+ && pip install --upgrade numpy \
  && git clone --depth 1 --branch fea/rapids-cmake https://github.com/trxcllnt/blazingsql.git /repos/blazingsql \
  \
  && cmake -GNinja \
@@ -100,7 +101,7 @@ RUN pip install --upgrade numpy \
     -B /repos/blazingsql/io/build \
     -DGCS_SUPPORT=OFF -DS3_SUPPORT=OFF \
  && cmake --build /repos/blazingsql/io/build \
- && cmake --build /repos/blazingsql/io/build -j$(nproc) -v --target install \
+ && cmake --build /repos/blazingsql/io/build -j${PARALLEL_LEVEL} -v --target install \
  \
  && cmake -GNinja \
     -S /repos/blazingsql/engine \
@@ -114,46 +115,36 @@ RUN pip install --upgrade numpy \
     -D SQLITE_SUPPORT=OFF \
     -D POSTGRESQL_SUPPORT=OFF \
  && cmake --build /repos/blazingsql/engine/build \
- && cmake --build /repos/blazingsql/engine/build -j$(nproc) -v --target install
-
-# Build and install pyblazing, pyarrow, rmm, and cudf
-RUN cd /repos/blazingsql/pyblazing \
- && pip install --upgrade -r requirements_dev.txt \
-    --target "$INSTALL_PREFIX/lib/python3.8/dist-packages" \
- && env PARALLEL_LEVEL=$(nproc) \
-    python setup.py build_ext -j$(nproc) --inplace \
- && python setup.py install --single-version-externally-managed --record=record.txt \
- && cd / && rm -rf /repos/blazingsql \
+ && cmake --build /repos/blazingsql/engine/build -j${PARALLEL_LEVEL} -v --target install \
  \
- && git clone --depth 1 --branch branch-21.08 https://github.com/rapidsai/rmm.git /repos/rmm \
- && cd /repos/rmm/python \
- && pip install --upgrade -r dev_requirements.txt \
-    --target "$INSTALL_PREFIX/lib/python3.8/dist-packages" \
- && env PARALLEL_LEVEL=$(nproc) \
-    python setup.py build_ext -j$(nproc) --inplace \
- && python setup.py install --single-version-externally-managed --record=record.txt \
- && cd / && rm -rf /repos/rmm \
+ # Build and install pyblazing, pyarrow, rmm, and cudf
+ && export PYBLAZING_PYTHON_DIR=/repos/blazingsql/pyblazing \
+ && cd "$PYBLAZING_PYTHON_DIR" && pip install --upgrade -r requirements_dev.txt --target "$INSTALL_PREFIX/lib/python3.8/dist-packages" \
+ && cd "$PYBLAZING_PYTHON_DIR" && python setup.py build_ext --inplace -j${PARALLEL_LEVEL} \
+ && cd "$PYBLAZING_PYTHON_DIR" && python setup.py install --single-version-externally-managed --record=record.txt \
  \
- && git clone --depth 1 --branch apache-arrow-1.0.1 https://github.com/apache/arrow.git /repos/arrow \
- && cd /repos/arrow/python \
+ && export RMM_PYTHON_DIR=/repos/blazingsql/engine/build/_deps/rmm-src/python \
+ && cd "$RMM_PYTHON_DIR" && pip install --upgrade -r dev_requirements.txt --target "$INSTALL_PREFIX/lib/python3.8/dist-packages" \
+ && cd "$RMM_PYTHON_DIR" && python setup.py build_ext --inplace -j${PARALLEL_LEVEL} \
+ && cd "$RMM_PYTHON_DIR" && python setup.py install --single-version-externally-managed --record=record.txt \
+ \
  && export ARROW_HOME="$INSTALL_PREFIX" \
- && env PARALLEL_LEVEL=$(nproc) \
-        PYARROW_PARALLEL=$(nproc) \
-        PYARROW_BUILD_TYPE=Release \
-        PYARROW_CMAKE_GENERATOR=Ninja \
-    python setup.py build_ext -j$(nproc) --inplace \
- && python setup.py install --single-version-externally-managed --record=record.txt \
- && cd / && rm -rf /repos/arrow \
+ && export PYARROW_BUILD_TYPE=Release \
+ && export PYARROW_CMAKE_GENERATOR=Ninja \
+ && export PYARROW_PARALLEL=${PARALLEL_LEVEL} \
+ && export ARROW_PYTHON_DIR=/repos/blazingsql/io/build/_deps/arrow-src/python \
+ && cd "$ARROW_PYTHON_DIR" && python setup.py build_ext --inplace -j${PARALLEL_LEVEL} \
+ && cd "$ARROW_PYTHON_DIR" && python setup.py install --single-version-externally-managed --record=record.txt \
  \
- && git clone --depth 1 --branch branch-21.08 https://github.com/rapidsai/cudf.git /repos/cudf \
- && cd /repos/cudf/python/cudf \
- && pip install --upgrade \
-    -r requirements/cuda-11.2/dev_requirements.txt \
-    --target "$INSTALL_PREFIX/lib/python3.8/dist-packages" \
- && env PARALLEL_LEVEL=$(nproc) \
-    python setup.py build_ext -j$(nproc) --inplace \
- && python setup.py install --single-version-externally-managed --record=record.txt \
- && cd / && rm -rf /repos/cudf
+ && cp -R /repos/blazingsql/engine/build/_deps/dlpack-src/include/dlpack "$INSTALL_PREFIX/include/dlpack" \
+ && ln -s "$INSTALL_PREFIX/include/dlpack" /usr/include/dlpack \
+ && ln -s "$INSTALL_PREFIX/include/libcudf" /usr/include/libcudf \
+ && export CUDF_PYTHON_DIR=/repos/blazingsql/engine/build/_deps/cudf-src/python/cudf \
+ && cd "$CUDF_PYTHON_DIR" && pip install --upgrade -r requirements/cuda-11.2/dev_requirements.txt --target "$INSTALL_PREFIX/lib/python3.8/dist-packages" \
+ && cd "$CUDF_PYTHON_DIR" && python setup.py build_ext --inplace -j${PARALLEL_LEVEL} \
+ && cd "$CUDF_PYTHON_DIR" && python setup.py install --single-version-externally-managed --record=record.txt \
+ \
+ && cd / && rm -rf /repos/{blazingsql,arrow,cudf,rmm}
 
 
 FROM nvidia/cuda:${CUDA_VERSION}-runtime-ubuntu${UBUNTU_VERSION}
