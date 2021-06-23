@@ -664,8 +664,11 @@ rapids_export(INSTALL blazingsql-engine
 ################################################################################################
 # - build export -------------------------------------------------------------------------------
 set(code_string [=[
-# find boost
-include(${BLAZINGSQL_ENGINE_SOURCE_DIR}/cmake/thirdparty/get_boost.cmake)
+# Don't look for a Boost CMake configuration file because it adds the
+# `-DBOOST_ALL_NO_LIB` and `-DBOOST_FILESYSTEM_DYN_LINK` compile defs
+set(Boost_NO_BOOST_CMAKE ON)
+# TODO: Use CPMFindPackage to add or build Boost
+find_package(Boost ${BLAZINGSQL_ENGINE_MIN_VERSION_Boost} QUIET MODULE COMPONENTS regex system filesystem)
 ]=])
 
 rapids_export(BUILD blazingsql-engine
