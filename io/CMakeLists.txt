@@ -57,6 +57,7 @@ message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 option(GCS_SUPPORT "Enables support for GCS fileSystem" ON)
 option(S3_SUPPORT "Enables support for S3 fileSystem" ON)
 option(${PROJECT_NAME}_USE_ARROW_STATIC "Build and statically link Arrow libraries" OFF)
+option(${PROJECT_NAME}_BUILD_ARROW_PYTHON "Build Arrow libraries with Python support" ON)
 
 message(STATUS "GCS_SUPPORT: ${GCS_SUPPORT}")
 message(STATUS "S3_SUPPORT: ${S3_SUPPORT}")

@@ -14,7 +14,7 @@
 # limitations under the License.
 #=============================================================================
 
-function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3)
+function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 BUILD_ARROW_PYTHON)
 
     set(ARROW_BUILD_SHARED ON)
     set(ARROW_BUILD_STATIC OFF)
@@ -56,7 +56,7 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3)
                         "CUDA_USE_STATIC_CUDA_RUNTIME ${CUDA_STATIC_RUNTIME}"
                         "ARROW_IPC ON"
                         "ARROW_CUDA ON"
-                        "ARROW_PYTHON ON"
+                        "ARROW_PYTHON ${BUILD_ARROW_PYTHON}"
                         "ARROW_DATASET ON"
                         "ARROW_WITH_BACKTRACE ON"
                         "ARROW_CXXFLAGS -w"
@@ -146,4 +146,5 @@ find_and_configure_arrow(
     ${${PROJECT_NAME}_VERSION_Arrow}
     ${${PROJECT_NAME}_USE_ARROW_STATIC}
     ${S3_SUPPORT}
+    ${${PROJECT_NAME}_BUILD_ARROW_PYTHON}
 )
