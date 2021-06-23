@@ -547,11 +547,10 @@ target_compile_definitions(blazingsql-engine
 
 # Specify include paths for the current target and dependents
 target_include_directories(blazingsql-engine
-           PUBLIC      "$<BUILD_INTERFACE:${JITIFY_INCLUDE_DIR}>"
-                       "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+           PUBLIC      "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+                       "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>"
            PRIVATE     "$<BUILD_INTERFACE:${PYTHON_INCLUDE_DIRS}>"
                        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>"
-                       "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>"
            INTERFACE   "$<INSTALL_INTERFACE:include>"
                        "$<INSTALL_INTERFACE:include/blazingdb/engine>"
                        "$<INSTALL_INTERFACE:include/libcudf/Thrust>"
