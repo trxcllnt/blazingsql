@@ -279,7 +279,7 @@ if(CONDA_INCLUDE_DIRS)
     target_include_directories(blazingsql-io PUBLIC "$<BUILD_INTERFACE:${CONDA_INCLUDE_DIRS}>")
 endif()
 
-add_library(blazingdb::io ALIAS blazingsql-io)
+add_library(blazingdb::blazingsql-io ALIAS blazingsql-io)
 
 # # Install target and headers
 # install(TARGETS blazingsql-io DESTINATION lib)
