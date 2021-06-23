@@ -564,7 +564,7 @@ endif()
 
 target_compile_definitions(blazingsql-engine PUBLIC CUDA_API_PER_THREAD_DEFAULT_STREAM)
 
-add_library(blazingdb::engine ALIAS blazingsql-engine)
+add_library(blazingdb::blazingsql-engine ALIAS blazingsql-engine)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo" OR "$ENV{CONDA_BUILD}" STREQUAL "1")
     message(STATUS "This is a release build so the final runtime binaries will not depend on gtest")
