@@ -136,6 +136,7 @@ RUN cd /repos/blazingsql/pyblazing \
  \
  && git clone --depth 1 --branch apache-arrow-1.0.1 https://github.com/apache/arrow.git /repos/arrow \
  && cd /repos/arrow/python \
+ && export ARROW_HOME="$INSTALL_PREFIX" \
  && env PARALLEL_LEVEL=$(nproc) \
         PYARROW_PARALLEL=$(nproc) \
         PYARROW_BUILD_TYPE=Release \
