@@ -655,7 +655,12 @@ Provide targets for BlazingSQL Engine.
 
 ################################################################################################
 # - build export -------------------------------------------------------------------------------
-set(code_string "")
+set(code_string [=[
+# Don't look for a Boost CMake configuration file because it adds the
+# `-DBOOST_ALL_NO_LIB` and `-DBOOST_FILESYSTEM_DYN_LINK` compile defs
+set(Boost_NO_BOOST_CMAKE ON)
+find_dependency(Boost @BLAZINGSQL_ENGINE_MIN_VERSION_Boost@ COMPONENTS regex system filesystem)
+]=])
 
 rapids_export(BUILD blazingsql-engine
     EXPORT_SET blazingsql-engine-exports
