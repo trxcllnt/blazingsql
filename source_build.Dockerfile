@@ -91,8 +91,9 @@ ENV PATH="$PATH:$CUDA_HOME/bin:$INSTALL_PREFIX/bin"
 ENV PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$INSTALL_PREFIX/lib/python3.8/dist-packages"
 ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$CUDA_HOME/lib:$CUDA_HOME/lib64:$INSTALL_PREFIX/lib"
 
-# Build and install libcudf, blazingsql-io, blazingsql-engine from source
-RUN git clone --depth 1 --branch fea/rapids-cmake https://github.com/trxcllnt/blazingsql.git /repos/blazingsql \
+# Build and install numpy, blazingsql-io, libarrow, blazingsql-engine, and libcudf from source
+RUN pip install --upgrade numpy \
+ && git clone --depth 1 --branch fea/rapids-cmake https://github.com/trxcllnt/blazingsql.git /repos/blazingsql \
  \
  && cmake -GNinja \
     -S /repos/blazingsql/io \
@@ -115,7 +116,7 @@ RUN git clone --depth 1 --branch fea/rapids-cmake https://github.com/trxcllnt/bl
  && cmake --build /repos/blazingsql/engine/build \
  && cmake --build /repos/blazingsql/engine/build -j$(nproc) -v --target install
 
-# Build and install pyblazing, rmm, pyarrow, and cudf
+# Build and install pyblazing, pyarrow, rmm, and cudf
 RUN cd /repos/blazingsql/pyblazing \
  && pip install --upgrade -r requirements_dev.txt \
     --target "$INSTALL_PREFIX/lib/python3.8/dist-packages" \
