@@ -41,13 +41,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Setting this flag ensures `Threads::Threads` is the same value in first run and subsequent runs.
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-set(${PROJECT_NAME}_CXX_FLAGS "")
-set(${PROJECT_NAME}_CUDA_FLAGS "")
-set(${PROJECT_NAME}_CXX_DEFINITIONS "")
-set(${PROJECT_NAME}_CUDA_DEFINITIONS "")
-set(${PROJECT_NAME}_BUILD_TESTS ${BUILD_TESTS})
-set(${PROJECT_NAME}_BUILD_BENCHMARKS ${BUILD_BENCHMARKS})
-
 ###################################################################################################
 # - compiler options ------------------------------------------------------------------------------
 
@@ -155,6 +148,30 @@ option(S3_SUPPORT "Enables support for S3 fileSystem" ON)
 option(MYSQL_SUPPORT "Enables support for MySQL database" ON)
 option(SQLITE_SUPPORT "Enables support for SQLite database" ON)
 option(POSTGRESQL_SUPPORT "Enables support for Postgre database" ON)
+option(BLAZINGSQL_ENGINE_BUILD_ARROW_PYTHON "Build Cython error utilities" ON)
+option(BLAZINGSQL_ENGINE_WITH_PYTHON_ERRORS "Build Cython error utilities" ON)
+
+message(STATUS "GCS_SUPPORT: ${GCS_SUPPORT}")
+message(STATUS "S3_SUPPORT: ${S3_SUPPORT}")
+message(STATUS "MYSQL_SUPPORT: ${MYSQL_SUPPORT}")
+message(STATUS "SQLITE_SUPPORT: ${SQLITE_SUPPORT}")
+message(STATUS "POSTGRESQL_SUPPORT: ${POSTGRESQL_SUPPORT}")
+message(STATUS "BLAZINGSQL_IO_USE_ARROW_STATIC: ${BLAZINGSQL_IO_USE_ARROW_STATIC}")
+message(STATUS "BLAZINGSQL_IO_BUILD_ARROW_PYTHON: ${BLAZINGSQL_IO_BUILD_ARROW_PYTHON}")
+message(STATUS "BLAZINGSQL_ENGINE_BUILD_ARROW_PYTHON: ${BLAZINGSQL_ENGINE_BUILD_ARROW_PYTHON}")
+message(STATUS "BLAZINGSQL_ENGINE_WITH_PYTHON_ERRORS: ${BLAZINGSQL_ENGINE_WITH_PYTHON_ERRORS}")
+
+set(BLAZINGSQL_ENGINE_CXX_FLAGS "")
+set(BLAZINGSQL_ENGINE_CUDA_FLAGS "")
+set(BLAZINGSQL_ENGINE_CXX_DEFINITIONS "")
+set(BLAZINGSQL_ENGINE_CUDA_DEFINITIONS "")
+set(BLAZINGSQL_ENGINE_BUILD_TESTS ${BUILD_TESTS})
+set(BLAZINGSQL_ENGINE_BUILD_BENCHMARKS ${BUILD_BENCHMARKS})
+
+if(BLAZINGSQL_ENGINE_WITH_PYTHON_ERRORS)
+    list(APPEND BLAZINGSQL_ENGINE_CXX_DEFINITIONS WITH_PYTHON_ERRORS)
+    list(APPEND BLAZINGSQL_ENGINE_CUDA_DEFINITIONS WITH_PYTHON_ERRORS)
+endif()
 
 ###################################################################################################
 # - cudart options --------------------------------------------------------------------------------
@@ -243,11 +260,11 @@ include(cmake/thirdparty/get_cudf.cmake)
 include(cmake/thirdparty/get_jitify.cmake)
 include(cmake/thirdparty/get_ucx.cmake)
 
-# if(${PROJECT_NAME}_BUILD_TESTS)
+# if(BLAZINGSQL_ENGINE_BUILD_TESTS)
 #   include(cmake/thirdparty/get_gtest.cmake)
 # endif()
 
-# if(${PROJECT_NAME}_BUILD_BENCHMARKS)
+# if(BLAZINGSQL_ENGINE_BUILD_BENCHMARKS)
 #   include(cmake/thirdparty/get_gbench.cmake)
 # endif()
 
@@ -417,8 +434,8 @@ set(SRC_FILES src/blazing_table/BlazingHostTable.cpp
               src/cython/static.cpp
               src/cython/initialize.cpp
               src/cython/io.cpp
-              src/cython/errors.cpp
               src/cython/engine.cpp
+              src/cython/errors.cpp
               src/distribution_utils/primitives.cpp
 
               src/communication/factory/MessageFactory.cpp

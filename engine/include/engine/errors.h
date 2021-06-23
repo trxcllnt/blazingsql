@@ -1,3 +1,4 @@
+#ifdef WITH_PYTHON_ERRORS
 void raiseInitializeError();
 void raiseFinalizeError();
 void raiseGetProductDetailsError();
@@ -14,3 +15,4 @@ void raiseRegisterFileSystemGCSError();
 void raiseRegisterFileSystemS3Error();
 void raiseRegisterFileSystemLocalError();
 void raiseInferFolderPartitionMetadataError();
+#endif

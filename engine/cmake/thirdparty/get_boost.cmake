@@ -15,7 +15,7 @@
 #=============================================================================
 
 # Min version set to newest boost in Ubuntu bionic apt repositories
-set(${PROJECT_NAME}_MIN_VERSION_Boost 1.65.0)
+set(BLAZINGSQL_ENGINE_MIN_VERSION_Boost 1.65.0)
 
 # Don't look for a Boost CMake configuration file because it adds the
 # `-DBOOST_ALL_NO_LIB` and `-DBOOST_FILESYSTEM_DYN_LINK` compile defs

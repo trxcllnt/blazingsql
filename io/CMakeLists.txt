@@ -56,12 +56,12 @@ message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
 option(GCS_SUPPORT "Enables support for GCS fileSystem" ON)
 option(S3_SUPPORT "Enables support for S3 fileSystem" ON)
-option(${PROJECT_NAME}_USE_ARROW_STATIC "Build and statically link Arrow libraries" OFF)
-option(${PROJECT_NAME}_BUILD_ARROW_PYTHON "Build Arrow libraries with Python support" ON)
+option(BLAZINGSQL_IO_USE_ARROW_STATIC "Build and statically link Arrow libraries" OFF)
+option(BLAZINGSQL_IO_BUILD_ARROW_PYTHON "Build Arrow libraries with Python support" ON)
 
 message(STATUS "GCS_SUPPORT: ${GCS_SUPPORT}")
 message(STATUS "S3_SUPPORT: ${S3_SUPPORT}")
-message(STATUS "${PROJECT_NAME}_USE_ARROW_STATIC: ${${PROJECT_NAME}_USE_ARROW_STATIC}")
+message(STATUS "BLAZINGSQL_IO_USE_ARROW_STATIC: ${BLAZINGSQL_IO_USE_ARROW_STATIC}")
 
 ###################################################################################################
 # - conda environment -----------------------------------------------------------------------------
@@ -97,12 +97,12 @@ endif ()
 #########################################################################3
 # - compiler stuff ------------------
 
-set(${PROJECT_NAME}_CXX_FLAGS "")
-set(${PROJECT_NAME}_CUDA_FLAGS "")
-set(${PROJECT_NAME}_CXX_DEFINITIONS "")
-set(${PROJECT_NAME}_CUDA_DEFINITIONS "")
+set(BLAZINGSQL_IO_CXX_FLAGS "")
+set(BLAZINGSQL_IO_CUDA_FLAGS "")
+set(BLAZINGSQL_IO_CXX_DEFINITIONS "")
+set(BLAZINGSQL_IO_CUDA_DEFINITIONS "")
 
-list(APPEND ${PROJECT_NAME}_CXX_FLAGS -Wall -Wextra -Wno-unknown-pragmas)
+list(APPEND BLAZINGSQL_IO_CXX_FLAGS -Wall -Wextra -Wno-unknown-pragmas)
 
 # set(CMAKE_CXX_STANDARD 17)
 # set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -129,7 +129,7 @@ include(CheckLibraryExists)
 # TODO percy jp mario we don't need curl unless we use the storages
 find_package(CURL REQUIRED)
 # add_definitions( -DCURL_STATICLIB )
-list(APPEND ${PROJECT_NAME}_CXX_DEFINITIONS CURL_STATICLIB)
+list(APPEND BLAZINGSQL_IO_CXX_DEFINITIONS CURL_STATICLIB)
 
 # # BEGIN find arrow
 # find_path(ARROW_INCLUDE_DIR "arrow" HINTS "$ENV{ARROW_ROOT}/include")

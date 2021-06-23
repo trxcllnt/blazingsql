@@ -1,3 +1,4 @@
+#ifdef WITH_PYTHON_ERRORS
 #include <stdexcept>
 
 #include <Python.h>
@@ -37,3 +38,6 @@ RAISE_ERROR(RegisterFileSystemLocal)
 RAISE_ERROR(InferFolderPartitionMetadata)
 RAISE_ERROR(ResetMaxMemoryUsed)
 RAISE_ERROR(GetMaxMemoryUsed)
+
+#undef RAISE_ERROR
+#endif
