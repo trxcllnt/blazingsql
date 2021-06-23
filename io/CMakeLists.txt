@@ -351,14 +351,6 @@ set(code_string [=[
 # find arrow
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/blazingsql-io-arrow-targets.cmake")
   include("${CMAKE_CURRENT_LIST_DIR}/blazingsql-io-arrow-targets.cmake")
-else()
-  if(NOT DEFINED BLAZINGSQL_IO_USE_ARROW_STATIC)
-    set(BLAZINGSQL_IO_USE_ARROW_STATIC OFF)
-  endif()
-  if (NOT DEFINED S3_SUPPORT)
-    set(S3_SUPPORT OFF)
-  endif()
-  include(@BLAZINGSQL_IO_SOURCE_DIR@/cmake/thirdparty/CUDF_GetArrow.cmake)
 endif()
 ]=])
 
