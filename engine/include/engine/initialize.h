@@ -3,7 +3,7 @@
 #include <map>
 #include <memory>
 #include <cstdint>
-#include "../../src/utilities/error.hpp"
+#include "utilities/error.hpp"
 
 #include "common.h"
 #include "cache_machine/CacheMachine.h"

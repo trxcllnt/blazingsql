@@ -2,7 +2,7 @@
 
 #include "execution_kernels/kernel.h"
 #include "cache_machine/CacheMachine.h"
-#include "ExceptionHandling/BlazingThread.h"
+#include <blazingdb/io/ExceptionHandling/BlazingThread.h>
 #include "utilities/ctpl_stl.h"
 
 namespace ral {

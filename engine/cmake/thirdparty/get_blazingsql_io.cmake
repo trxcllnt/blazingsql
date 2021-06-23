@@ -37,6 +37,8 @@ function(find_and_configure_blazingsql_io VERSION)
             SOURCE_SUBDIR          io
             OPTIONS                "BUILD_TESTS OFF"
                                    "BUILD_BENCHMARKS OFF"
+                                   "S3_SUPPORT ${S3_SUPPORT}"
+                                   "GCS_SUPPORT ${GCS_SUPPORT}"
     )
 endfunction()
 

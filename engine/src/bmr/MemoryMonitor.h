@@ -3,7 +3,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <chrono>
-#include "ExceptionHandling/BlazingThread.h"
+#include <blazingdb/io/ExceptionHandling/BlazingThread.h>
 #include <map>
 
 class BlazingMemoryResource;

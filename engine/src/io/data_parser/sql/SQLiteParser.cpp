@@ -11,14 +11,14 @@
 
 #include "utilities/CommonOperations.h"
 
-#include "ExceptionHandling/BlazingThread.h"
+#include <blazingdb/io/ExceptionHandling/BlazingThread.h>
 #include <arrow/io/file.h>
 #include <sqlite3.h>
 
 #include <parquet/column_writer.h>
 #include <parquet/file_writer.h>
 
-#include "Util/StringUtil.h"
+#include <blazingdb/io/Util/StringUtil.h>
 
 namespace ral {
 namespace io {

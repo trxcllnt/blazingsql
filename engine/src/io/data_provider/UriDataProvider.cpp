@@ -8,7 +8,7 @@
  */
 
 #include "UriDataProvider.h"
-#include "Config/BlazingContext.h"
+#include <blazingdb/io/Config/BlazingContext.h>
 #include "arrow/status.h"
 #include <blazingdb/io/Util/StringUtil.h>
 
@@ -41,7 +41,7 @@ size_t uri_data_provider::get_num_handles(){
 uri_data_provider::~uri_data_provider() {
 	// TODO: when a shared_ptr to a randomaccessfile goes out of scope does it close files automatically?
 	// in case it doesnt we can close that here
-	this->close_file_handles(); 
+	this->close_file_handles();
 }
 
 bool uri_data_provider::has_next() { return this->current_file < this->file_uris.size(); }
@@ -52,7 +52,7 @@ void uri_data_provider::reset() {
 }
 
 /**
- * Tries to get up to num_files data_handles. We use this instead of a get_all() because if there are too many files, 
+ * Tries to get up to num_files data_handles. We use this instead of a get_all() because if there are too many files,
  * trying to get too many file handles will cause a crash. Using get_some() forces breaking up the process of getting file_handles.
  * open_file = true will actually open the file and return a std::shared_ptr<arrow::io::RandomAccessFile>. If its false it will return a nullptr
  */
@@ -74,7 +74,7 @@ data_handle uri_data_provider::get_next(bool open_file) {
 	// because openReadable doens't  validate it and just return a nullptr
 
 	if(this->directory_uris.size() > 0 && this->directory_current_file < this->directory_uris.size()) {
-		std::shared_ptr<arrow::io::RandomAccessFile> file = open_file ? 
+		std::shared_ptr<arrow::io::RandomAccessFile> file = open_file ?
 			BlazingContext::getInstance()->getFileSystemManager()->openReadable(
 				this->directory_uris[this->directory_current_file]) : nullptr;
 
@@ -139,7 +139,7 @@ data_handle uri_data_provider::get_next(bool open_file) {
 					"For HDFS file paths: 'hdfs://registeredFileSystemName/folder0/folder1/fileName.extension'    " +
 					"For HDFS file paths with wildcard: '/folder0/folder1/*fileName*.*'    " +
 					"For HDFS directory paths: 'hdfs://registeredFileSystemName/folder0/folder1/'");
-			} 
+			}
 		} catch(const std::exception & e) {
 			std::shared_ptr<spdlog::logger> logger = spdlog::get("batch_logger");
 			if(logger){
@@ -210,12 +210,12 @@ data_handle uri_data_provider::get_next(bool open_file) {
 
 		} else if(fileStatus.isFile()) {
 			std::shared_ptr<arrow::io::RandomAccessFile> file = nullptr;
-            
+
             if (open_file) {
                 file = BlazingContext::getInstance()->getFileSystemManager()->openReadable(current_uri);
 				this->opened_files.push_back(file);
 			}
-            
+
 			data_handle handle;
 			handle.uri = current_uri;
 			handle.file_handle = file;

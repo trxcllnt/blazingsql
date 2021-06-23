@@ -2,7 +2,7 @@
 
 //#include "cudf/cudf.h"
 
-#include "../src/io/DataType.h"
+#include "io/DataType.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -10,7 +10,7 @@
 #include <arrow/table.h>
 #include <memory>
 #include <execution_kernels/LogicPrimitives.h>
-#include "../../src/utilities/error.hpp"
+#include "utilities/error.hpp"
 
 typedef ral::io::DataType DataType;
 

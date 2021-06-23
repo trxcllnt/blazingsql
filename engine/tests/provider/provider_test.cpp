@@ -1,15 +1,15 @@
 #include <fstream>
 #include "tests/utilities/BlazingUnitTest.h"
 #include "io/data_provider/UriDataProvider.h"
-#include "FileSystem/LocalFileSystem.h"
-#include "Util/StringUtil.h"
+#include <blazingdb/io/FileSystem/LocalFileSystem.h>
+#include <blazingdb/io/Util/StringUtil.h>
 
 const std::string BLAZING_TMP_PATH = "/tmp/blazing";
 
 struct ProviderTest : public BlazingUnitTest {};
 
 TEST_F(ProviderTest, non_existent_directory) {
-    
+
     std::string filename = "/fake/";
 	std::vector<Uri> uris = {Uri{filename}};
 

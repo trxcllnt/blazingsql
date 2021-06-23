@@ -10,8 +10,8 @@
 #include <numeric>
 #include <arrow/io/file.h>
 
-#include "ExceptionHandling/BlazingThread.h"
-#include "Util/StringUtil.h"
+#include <blazingdb/io/ExceptionHandling/BlazingThread.h>
+#include <blazingdb/io/Util/StringUtil.h>
 
 #ifdef MYSQL_SUPPORT
 #include <mysql/jdbc.h>

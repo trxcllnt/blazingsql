@@ -4,7 +4,7 @@
 #include <map>
 
 #include "utilities/ctpl_stl.h"
-#include "ExceptionHandling/BlazingThread.h"
+#include <blazingdb/io/ExceptionHandling/BlazingThread.h>
 #include <ucp/api/ucp.h>
 #include <ucp/api/ucp_def.h>
 #include "messageReceiver.hpp"

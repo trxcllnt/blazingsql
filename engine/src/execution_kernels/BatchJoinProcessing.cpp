@@ -1,12 +1,12 @@
 #include <string>
 #include "BatchJoinProcessing.h"
-#include "ExceptionHandling/BlazingThread.h"
+#include <blazingdb/io/ExceptionHandling/BlazingThread.h>
 #include "parser/expression_tree.hpp"
 #include "utilities/CodeTimer.h"
 #include <cudf/partitioning.hpp>
 #include <cudf/join.hpp>
 #include <cudf/stream_compaction.hpp>
-#include <src/execution_kernels/LogicalFilter.h>
+#include "execution_kernels/LogicalFilter.h"
 #include "execution_graph/executor.h"
 #include "cache_machine/CPUCacheData.h"
 
@@ -1002,7 +1002,7 @@ void JoinPartitionKernel::small_table_scatter_distribution(std::unique_ptr<ral::
 	BlazingThread right_thread([this, &big_input, &big_cache_data, big_output_cache_name, big_table_idx](){
 
 		while (big_cache_data != nullptr) {
-			
+
 			bool added = this->add_to_output_cache(std::move(big_cache_data), big_output_cache_name);
 			if (added) {
 				auto& self_node = ral::communication::CommunicationData::getInstance().getSelfNode();
@@ -1051,7 +1051,7 @@ void JoinPartitionKernel::small_table_scatter_distribution(std::unique_ptr<ral::
 
 	int total_count = get_total_partition_counts(small_table_idx);
 
-	this->output_cache(small_output_cache_name)->wait_for_count(total_count);	
+	this->output_cache(small_output_cache_name)->wait_for_count(total_count);
 }
 
 ral::execution::task_result JoinPartitionKernel::do_process(std::vector<std::unique_ptr<ral::frame::BlazingTable>> inputs,

@@ -266,8 +266,7 @@ target_include_directories(blazingsql-io
            PUBLIC      "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>"
                        "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
            PRIVATE     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>"
-           INTERFACE   "$<INSTALL_INTERFACE:include>"
-                       "$<INSTALL_INTERFACE:include/blazingdb/io>")
+           INTERFACE   "$<INSTALL_INTERFACE:include>")
 
 # Add Conda library paths if specified
 if(CONDA_LINK_DIRS)
@@ -307,13 +306,12 @@ file(COPY ${PROJECT_SOURCE_DIR}/src/
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/blazingdb/io
      FILES_MATCHING PATTERN "*.h")
 
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
-        DESTINATION include
-        FILES_MATCHING PATTERN "*.h")
+file(COPY ${PROJECT_SOURCE_DIR}/src/
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/blazingdb/io
+     FILES_MATCHING PATTERN "*.hpp")
 
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
-        DESTINATION include
-        FILES_MATCHING PATTERN "*.hpp")
+        DESTINATION include)
 
 if(TARGET arrow_shared)
     get_target_property(arrow_is_imported arrow_shared IMPORTED)

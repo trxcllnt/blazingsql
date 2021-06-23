@@ -6,7 +6,7 @@
 #define BLAZINGDB_RAL_SRC_IO_DATA_PARSER_METADATA_PARQUET_METADATA_CPP_H_
 
 #include "parquet_metadata.h"
-#include "ExceptionHandling/BlazingThread.h"
+#include <blazingdb/io/ExceptionHandling/BlazingThread.h>
 #include "utilities/CommonOperations.h"
 #include <cudf/column/column_factories.hpp>
 
@@ -31,7 +31,7 @@ void set_min_max(
 		break;
 	case parquet::ConvertedType::type::TIMESTAMP_MILLIS: {
 		auto convertedStats = std::static_pointer_cast<parquet::Int64Statistics>(statistics);
-		int64_t min = statistics->HasMinMax() ? convertedStats->min() : 0;     
+		int64_t min = statistics->HasMinMax() ? convertedStats->min() : 0;
 		int64_t max = statistics->HasMinMax() ? convertedStats->max() : 9223286400; // 04/11/2262 in ms
 		minmax_metadata_table[col_index].back() = min;
 		minmax_metadata_table[col_index + 1].back() = max;
@@ -122,7 +122,7 @@ void set_min_max(
 			throw std::runtime_error("Invalid gdf_dtype in set_min_max");
 			break;
 		}
-	}	
+	}
 }
 
 // This function is copied and adapted from cudf

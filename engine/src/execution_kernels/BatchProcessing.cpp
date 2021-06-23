@@ -1,7 +1,7 @@
 #include "BatchProcessing.h"
 #include "utilities/CodeTimer.h"
 #include "communication/CommunicationData.h"
-#include "ExceptionHandling/BlazingThread.h"
+#include <blazingdb/io/ExceptionHandling/BlazingThread.h>
 #include "io/data_parser/CSVParser.h"
 
 #ifdef MYSQL_SUPPORT
@@ -19,7 +19,7 @@
 #include "parser/expression_utils.hpp"
 #include "execution_graph/executor.h"
 #include <cudf/types.hpp>
-#include <src/utilities/DebuggingUtils.h>
+#include "utilities/DebuggingUtils.h"
 #include "execution_kernels/LogicalFilter.h"
 #include "execution_kernels/LogicalProject.h"
 #include "io/data_provider/sql/AbstractSQLDataProvider.h"
@@ -139,7 +139,7 @@ ral::execution::task_result TableScan::do_process(std::vector< std::unique_ptr<r
     try{
         output->addToCache(std::move(inputs[0]));
     }catch(const rmm::bad_alloc& e){
-        //can still recover if the input was not a GPUCacheData 
+        //can still recover if the input was not a GPUCacheData
         return {ral::execution::task_status::RETRY, std::string(e.what()), std::move(inputs)};
     }catch(const std::exception& e){
         return {ral::execution::task_status::FAIL, std::string(e.what()), std::vector< std::unique_ptr<ral::frame::BlazingTable> > ()};
@@ -175,7 +175,7 @@ kstatus TableScan::run() {
                     std::move(inputs),
                     output_cache,
                     this);
-           
+
             file_index++;
         }
 
@@ -312,7 +312,7 @@ kstatus BindableTableScan::run() {
                     std::move(inputs),
                     output_cache,
                     this);
-           
+
             file_index++;
         }
 
@@ -377,7 +377,7 @@ ral::execution::task_result Projection::do_process(std::vector< std::unique_ptr<
         auto columns = ral::processor::process_project(std::move(input), expression, this->context.get());
         output->addToCache(std::move(columns));
     }catch(const rmm::bad_alloc& e){
-        //can still recover if the input was not a GPUCacheData 
+        //can still recover if the input was not a GPUCacheData
         return {ral::execution::task_status::RETRY, std::string(e.what()), std::move(inputs)};
     }catch(const std::exception& e){
         return {ral::execution::task_status::FAIL, std::string(e.what()), std::vector< std::unique_ptr<ral::frame::BlazingTable> > ()};

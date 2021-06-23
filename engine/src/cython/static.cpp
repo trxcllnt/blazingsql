@@ -4,7 +4,7 @@
 
 #include <blazingdb/engine/bsqlengine_config.h>
 
-#include "Util/StringUtil.h"
+#include <blazingdb/io/Util/StringUtil.h>
 
 std::map<std::string, std::string> getProductDetails() {
 	std::map<std::string, std::string> ret;

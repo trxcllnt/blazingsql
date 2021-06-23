@@ -7,7 +7,7 @@
 #include <numeric>
 
 #include <arrow/io/file.h>
-#include "ExceptionHandling/BlazingThread.h"
+#include <blazingdb/io/ExceptionHandling/BlazingThread.h>
 
 #include <parquet/column_writer.h>
 #include <parquet/file_writer.h>
@@ -44,7 +44,7 @@ std::unique_ptr<ral::frame::BlazingTable> parquet_parser::parse_batch(
 
 		pq_args.enable_convert_strings_to_categories(false);
 		pq_args.enable_use_pandas_metadata(false);
-		
+
 		std::vector<std::string> col_names(column_indices.size());
 
 		for(size_t column_i = 0; column_i < column_indices.size(); column_i++) {

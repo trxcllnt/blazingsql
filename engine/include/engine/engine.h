@@ -5,9 +5,9 @@
 #include <string>
 #include <vector>
 
-#include <execution_kernels/LogicPrimitives.h>
-#include <execution_graph/graph.h>
-#include "../../src/utilities/error.hpp"
+#include "execution_kernels/LogicPrimitives.h"
+#include "execution_graph/graph.h"
+#include "utilities/error.hpp"
 
 std::string runGeneratePhysicalGraph(uint32_t masterIndex,
                                      std::vector<std::string> worker_ids,
@@ -58,8 +58,8 @@ std::pair<std::unique_ptr<PartitionedResultSet>, error_code_t> runQuery_C(int32_
 std::pair<TableScanInfo, error_code_t> getTableScanInfo_C(std::string logicalPlan);
 
 std::pair<std::unique_ptr<ResultSet>, error_code_t> runSkipData_C(
-	ral::frame::BlazingTableView metadata, 
-	std::vector<std::string> all_column_names, 
+	ral::frame::BlazingTableView metadata,
+	std::vector<std::string> all_column_names,
 	std::string query);
 
 

@@ -4,9 +4,9 @@
 #include <memory>
 #include <rmm/device_buffer.hpp>
 #include <utility>
-#include <Util/StringUtil.h>
+#include <blazingdb/io/Util/StringUtil.h>
 
-#include "ExceptionHandling/BlazingThread.h"
+#include <blazingdb/io/ExceptionHandling/BlazingThread.h>
 #include "node.hpp"
 #include "cache_machine/CacheMachine.h"
 #include "utilities/ctpl_stl.h"
@@ -30,7 +30,7 @@ public:
 	 * @param context The ucp_context_h
 	 * @param origin The ucp_worker_h
 	 * @param ral_id The ral_id
-	 * @param protocol The comm::blazing_protocol 
+	 * @param protocol The comm::blazing_protocol
 	 */
 	message_sender(std::shared_ptr<ral::cache::CacheMachine> output_cache,
 		const std::map<std::string, node> & node_address_map,
@@ -53,7 +53,7 @@ public:
 	std::shared_ptr<ral::cache::CacheMachine> get_output_cache(){
 		return output_cache;
 	}
-	
+
 	/**
 	 * @brief A polling function that listens on a cache for data and send it off via some protocol
 	 */

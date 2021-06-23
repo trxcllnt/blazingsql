@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <FileSystem/Uri.h>
+#include <blazingdb/io/FileSystem/Uri.h>
 #include "data_parser/DataParser.h"
 #include "data_provider/DataProvider.h"
 #include <arrow/io/interfaces.h>

@@ -8,7 +8,7 @@
  */
 
 #include "GDFDataProvider.h"
-#include "Config/BlazingContext.h"
+#include <blazingdb/io/Config/BlazingContext.h>
 #include "arrow/status.h"
 #include <blazingdb/io/FileSystem/Uri.h>
 #include <blazingdb/io/Util/StringUtil.h>
@@ -44,7 +44,7 @@ void gdf_data_provider::reset() {
 }
 
 /**
- * Tries to get up to num_files data_handles. We use this instead of a get_all() because if there are too many files, 
+ * Tries to get up to num_files data_handles. We use this instead of a get_all() because if there are too many files,
  * trying to get too many file handles will cause a crash. Using get_some() forces breaking up the process of getting file_handles.
  * open_file = true will actually open the file and return a std::shared_ptr<arrow::io::RandomAccessFile>. If its false it will return a nullptr
  */

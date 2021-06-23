@@ -11,7 +11,7 @@
 #include "parser/expression_utils.hpp"
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <Util/StringUtil.h>
+#include <blazingdb/io/Util/StringUtil.h>
 
 using namespace fmt::literals;
 
@@ -31,7 +31,7 @@ struct node {
 	std::vector<std::shared_ptr<node>> children;  // children nodes
 };
 struct tree_processor {
-	
+
 	node root;
 	std::shared_ptr<Context> context;
 	std::vector<ral::io::data_loader> input_loaders;
@@ -90,10 +90,10 @@ struct tree_processor {
 
 		} else if (is_generate_overlaps(expr)) {
 			k = std::make_shared<OverlapGeneratorKernel>(kernel_id,expr, kernel_context, query_graph);
-		
+
 		} else if (is_accumulate_overlaps(expr)) {
 			k = std::make_shared<OverlapAccumulatorKernel>(kernel_id,expr, kernel_context, query_graph);
-		
+
 		} else if (is_window_compute(expr)) {
 			k = std::make_shared<ComputeWindowKernel>(kernel_id,expr, kernel_context, query_graph);
 
@@ -293,7 +293,7 @@ struct tree_processor {
 			}
 		}
 		else if (is_project(expr) && is_window_function(expr) && first_windowed_call) {
-			
+
 			// Calcite for some reason makes double UNBOUNDED windows always be set as RANGE. If we treat them as ROWS its easier and equivalent
 			StringUtil::findAndReplaceAll(expr, "RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING", "ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING");
 
@@ -374,15 +374,15 @@ struct tree_processor {
 
 			if (window_expression_contains_partition_by(expr)) {
 				window_tree.put_child("children", create_array_tree(sort_tree));
-				
+
 			} else { // if the window expression does not contain a partition clause, then we need to add two extra steps
-				
+
 				std::string overlap_generation_expr = expr;
 				std::string overlap_accumulation_expr = expr;
-				
+
 				StringUtil::findAndReplaceAll(overlap_accumulation_expr, LOGICAL_PROJECT_TEXT, LOGICAL_ACCUMULATE_OVERLAPS_TEXT);
 				StringUtil::findAndReplaceAll(overlap_generation_expr, LOGICAL_PROJECT_TEXT, LOGICAL_GENERATE_OVERLAPS_TEXT);
-				
+
 				boost::property_tree::ptree overlap_generation_tree;
 				overlap_generation_tree.put("expr", overlap_generation_expr);
 				overlap_generation_tree.put_child("children", create_array_tree(sort_tree));
@@ -391,13 +391,13 @@ struct tree_processor {
 				overlap_accumulation_tree.put("expr", overlap_accumulation_expr);
 				overlap_accumulation_tree.put_child("children", create_array_tree(overlap_generation_tree));
 
-				window_tree.put_child("children", create_array_tree(overlap_accumulation_tree));				
+				window_tree.put_child("children", create_array_tree(overlap_accumulation_tree));
 			}
 			p_tree.put("expr", expr);
 			p_tree.put_child("children", create_array_tree(window_tree));
 
 			transform_json_tree(p_tree, false);
-			return;				
+			return;
 		}
 
 		for (auto &child : p_tree.get_child("children")) {
@@ -480,7 +480,7 @@ struct tree_processor {
 			if (it != config_options.end()){
 				concatenating_cache_num_bytes_timeout = std::stoi(config_options["CONCATENATING_CACHE_NUM_BYTES_TIMEOUT"]);
 			}
-			
+
 			auto child_kernel_type = child->kernel_unit->get_type_id();
 			auto parent_kernel_type = parent->kernel_unit->get_type_id();
 			if (children.size() > 1) {
@@ -488,7 +488,7 @@ struct tree_processor {
 				port_name = std::string("input_");
 				port_name.push_back(index_char);
 
-				if (parent_kernel_type == kernel_type::PartwiseJoinKernel) {				
+				if (parent_kernel_type == kernel_type::PartwiseJoinKernel) {
 
 					auto join_type = static_cast<PartwiseJoin*>(parent->kernel_unit.get())->get_join_type();
 					bool left_concat_all = join_type == ral::batch::RIGHT_JOIN || join_type == ral::batch::OUTER_JOIN || join_type == ral::batch::CROSS_JOIN;
@@ -496,7 +496,7 @@ struct tree_processor {
 					bool concat_all = index == 0 ? left_concat_all : right_concat_all;
 					cache_settings join_cache_machine_config = cache_settings{.type = CacheType::CONCATENATING, .num_partitions = 1, .context = context->clone(),
 						.concat_cache_num_bytes = join_partition_size_thresh, .num_bytes_timeout = concatenating_cache_num_bytes_timeout, .concat_all = concat_all};
-					query_graph.addPair(ral::cache::kpair(child->kernel_unit, parent->kernel_unit, port_name, join_cache_machine_config));					
+					query_graph.addPair(ral::cache::kpair(child->kernel_unit, parent->kernel_unit, port_name, join_cache_machine_config));
 
 				} else {
 					cache_settings cache_machine_config;
@@ -505,7 +505,7 @@ struct tree_processor {
 					query_graph.addPair(ral::cache::kpair(child->kernel_unit, parent->kernel_unit, port_name, cache_machine_config));
 				}
 			} else {
-				
+
 				if (child_kernel_type == kernel_type::JoinPartitionKernel && parent_kernel_type == kernel_type::PartwiseJoinKernel) {
 
 					auto join_type = static_cast<PartwiseJoin*>(parent->kernel_unit.get())->get_join_type();
@@ -515,7 +515,7 @@ struct tree_processor {
 						.concat_cache_num_bytes = join_partition_size_thresh, .num_bytes_timeout = concatenating_cache_num_bytes_timeout, .concat_all = left_concat_all};
 					cache_settings right_cache_machine_config = cache_settings{.type = CacheType::CONCATENATING, .num_partitions = 1, .context = context->clone(),
 						.concat_cache_num_bytes = join_partition_size_thresh, .num_bytes_timeout = concatenating_cache_num_bytes_timeout, .concat_all = right_concat_all};
-					
+
 					query_graph.addPair(ral::cache::kpair(child->kernel_unit, "output_a", parent->kernel_unit, "input_a", left_cache_machine_config));
 					query_graph.addPair(ral::cache::kpair(child->kernel_unit, "output_b", parent->kernel_unit, "input_b", right_cache_machine_config));
 
@@ -558,7 +558,7 @@ struct tree_processor {
 					if (it != config_options.end()){
 						concat_cache_num_bytes = std::stoull(config_options["MAX_DATA_LOAD_CONCAT_CACHE_BYTE_SIZE"]);
 					}
-					
+
 					cache_settings cache_machine_config = cache_settings{.type = CacheType::CONCATENATING, .num_partitions = 1, .context = context->clone(),
 						.concat_cache_num_bytes = concat_cache_num_bytes, .num_bytes_timeout = concatenating_cache_num_bytes_timeout, .concat_all = false};
 					query_graph.addPair(ral::cache::kpair(child->kernel_unit, parent->kernel_unit, cache_machine_config));

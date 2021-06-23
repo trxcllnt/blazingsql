@@ -532,12 +532,10 @@ target_compile_definitions(blazingsql-engine
 target_include_directories(blazingsql-engine
            PUBLIC      "$<BUILD_INTERFACE:${JITIFY_INCLUDE_DIR}>"
                        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
-           PRIVATE     "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>"
+           PRIVATE     "$<BUILD_INTERFACE:${PYTHON_INCLUDE_DIRS}>"
                        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>"
-                       "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>"
-                       "$<BUILD_INTERFACE:${PYTHON_INCLUDE_DIRS}>"
+                       "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>"
            INTERFACE   "$<INSTALL_INTERFACE:include>"
-                       "$<INSTALL_INTERFACE:include/blazingdb/io>"
                        "$<INSTALL_INTERFACE:include/blazingdb/engine>"
                        "$<INSTALL_INTERFACE:include/libcudf/Thrust>"
                        "$<INSTALL_INTERFACE:include/libcudf/libcudacxx>")
@@ -621,16 +619,24 @@ install(TARGETS
         EXPORT
           blazingsql-engine-exports)
 
-install(DIRECTORY include/
+file(COPY ${PROJECT_SOURCE_DIR}/include/
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/blazingdb
+     FILES_MATCHING PATTERN "*.h")
+
+file(COPY ${PROJECT_SOURCE_DIR}/include/
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/blazingdb
+     FILES_MATCHING PATTERN "*.hpp")
+
+file(COPY ${PROJECT_SOURCE_DIR}/src/
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/blazingdb/engine
+     FILES_MATCHING PATTERN "*.h")
+
+file(COPY ${PROJECT_SOURCE_DIR}/src/
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/blazingdb/engine
+     FILES_MATCHING PATTERN "*.hpp")
+
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
         DESTINATION include)
-
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
-        DESTINATION include/blazingdb/engine
-        FILES_MATCHING PATTERN "*.h")
-
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
-        DESTINATION include/blazingdb/engine
-        FILES_MATCHING PATTERN "*.hpp")
 
 ################################################################################################
 # - install export -------------------------------------------------------------------------------

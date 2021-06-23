@@ -1,6 +1,6 @@
 #include "distributing_kernel.h"
 #include "utilities/CommonOperations.h"
-#include <src/utilities/DebuggingUtils.h>
+#include "utilities/DebuggingUtils.h"
 #include "cache_machine/CPUCacheData.h"
 
 namespace ral {
@@ -79,10 +79,10 @@ void distributing_kernel::send_message(std::unique_ptr<ral::frame::BlazingTable>
     std::string message_id = metadata.get_values()[ral::cache::MESSAGE_ID];
     if(table==nullptr) {
         table = ral::utilities::create_empty_table({}, {});
-    } 
-    
+    }
+
     added = output_cache->addToCache(std::move(table),"",always_add,metadata,true);
-    
+
 
     if(wait_for) {
         std::lock_guard<std::mutex> lock(messages_to_wait_for_mutex);

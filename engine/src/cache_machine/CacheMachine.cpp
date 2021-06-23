@@ -10,11 +10,11 @@
 #include <cudf/io/orc.hpp>
 #include "parser/CalciteExpressionParsing.h"
 #include "communication/CommunicationData.h"
-#include <Util/StringUtil.h>
+#include <blazingdb/io/Util/StringUtil.h>
 #include <stdio.h>
 
-#include "Util/StringUtil.h"
-#include <src/utilities/DebuggingUtils.h>
+#include <blazingdb/io/Util/StringUtil.h>
+#include "utilities/DebuggingUtils.h"
 
 namespace ral {
 namespace cache {
@@ -324,9 +324,9 @@ bool CacheMachine::addToCache(std::unique_ptr<ral::frame::BlazingTable> table, s
 
 			auto memory_to_use = (this->memory_resources[cacheIndex]->get_memory_used() + table->sizeInBytes());
 
-			if( memory_to_use < this->memory_resources[cacheIndex]->get_memory_limit() || 
+			if( memory_to_use < this->memory_resources[cacheIndex]->get_memory_limit() ||
 			 	cache_level_override != -1) {
-				
+
 				if(cache_level_override != -1){
 					cacheIndex = cache_level_override;
 				}
@@ -357,7 +357,7 @@ bool CacheMachine::addToCache(std::unique_ptr<ral::frame::BlazingTable> table, s
 					if(cacheIndex == 1) {
 						std::unique_ptr<CacheData> cache_data;
 						cache_data = std::make_unique<CPUCacheData>(std::move(table), metadata, use_pinned);
-							
+
 						auto item =	std::make_unique<message>(std::move(cache_data), message_id);
 						this->waitingCache->put(std::move(item));
 
@@ -500,7 +500,7 @@ std::unique_ptr<ral::frame::BlazingTable> CacheMachine::pullFromCache() {
 	if (message_data == nullptr) {
 		return nullptr;
 	}
-    
+
     size_t num_rows = message_data->get_data().num_rows();
     size_t num_bytes = message_data->get_data().sizeInBytes();
     int dataType = static_cast<int>(message_data->get_data().get_type());
@@ -699,7 +699,7 @@ std::unique_ptr<ral::cache::CacheData> CacheMachine::pullAnyCacheData(const std:
 
     std::unique_ptr<message> message_data = waitingCache->get_or_wait_any(messages);
 	std::string message_id = message_data->get_message_id();
-    
+
     size_t num_rows = message_data->get_data().num_rows();
     size_t num_bytes = message_data->get_data().sizeInBytes();
     int dataType = static_cast<int>(message_data->get_data().get_type());
@@ -870,7 +870,7 @@ std::unique_ptr<ral::cache::CacheData> ConcatenatingCacheMachine::pullCacheData(
 	if (concat_all){
 		waitingCache->wait_until_finished();
 	} else {
-		waitingCache->wait_until_num_bytes(this->concat_cache_num_bytes, this->num_bytes_timeout);		
+		waitingCache->wait_until_num_bytes(this->concat_cache_num_bytes, this->num_bytes_timeout);
 	}
 
 	size_t total_bytes = 0;

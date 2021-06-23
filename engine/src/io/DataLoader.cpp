@@ -6,7 +6,7 @@
 #include "utilities/CommonOperations.h"
 #include "utilities/CodeTimer.h"
 #include <blazingdb/io/Library/Logging/Logger.h>
-#include "ExceptionHandling/BlazingThread.h"
+#include <blazingdb/io/ExceptionHandling/BlazingThread.h>
 #include <cudf/filling.hpp>
 #include <cudf/column/column_factories.hpp>
 #include "parser/CalciteExpressionParsing.h"
@@ -48,7 +48,7 @@ void data_loader::get_schema(Schema & schema, std::vector<std::pair<std::string,
 		    logger->error("|||{info}|||||","info"_a=log_detail);
 		}
 	}
-		
+
 	bool open_file = false;
 	while (this->provider->has_next()){
 		std::vector<data_handle> handles = this->provider->get_some(64, open_file);
