@@ -549,7 +549,6 @@ target_compile_definitions(blazingsql-engine
 target_include_directories(blazingsql-engine
            PUBLIC      "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
                        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>"
-                       "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>"
            PRIVATE     "$<BUILD_INTERFACE:${PYTHON_INCLUDE_DIRS}>"
            INTERFACE   "$<INSTALL_INTERFACE:include>"
                        "$<INSTALL_INTERFACE:include/blazingdb/engine>"
