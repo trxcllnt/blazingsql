@@ -548,6 +548,7 @@ target_compile_definitions(blazingsql-engine
 # Specify include paths for the current target and dependents
 target_include_directories(blazingsql-engine
            PUBLIC      "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+                       "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>"
                        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>"
            PRIVATE     "$<BUILD_INTERFACE:${PYTHON_INCLUDE_DIRS}>"
            INTERFACE   "$<INSTALL_INTERFACE:include>"
@@ -634,21 +635,21 @@ install(TARGETS
         EXPORT
           blazingsql-engine-exports)
 
-file(COPY ${PROJECT_SOURCE_DIR}/include/
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/blazingdb
-     FILES_MATCHING PATTERN "*.h")
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
+        DESTINATION include/blazingdb
+        FILES_MATCHING PATTERN "*.h")
 
-file(COPY ${PROJECT_SOURCE_DIR}/include/
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/blazingdb
-     FILES_MATCHING PATTERN "*.hpp")
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
+        DESTINATION include/blazingdb
+        FILES_MATCHING PATTERN "*.hpp")
 
-file(COPY ${PROJECT_SOURCE_DIR}/src/
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/blazingdb/engine
-     FILES_MATCHING PATTERN "*.h")
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/
+        DESTINATION include/blazingdb/engine
+        FILES_MATCHING PATTERN "*.h")
 
-file(COPY ${PROJECT_SOURCE_DIR}/src/
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/blazingdb/engine
-     FILES_MATCHING PATTERN "*.hpp")
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/
+        DESTINATION include/blazingdb/engine
+        FILES_MATCHING PATTERN "*.hpp")
 
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
         DESTINATION include)
