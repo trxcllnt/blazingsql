@@ -1166,12 +1166,35 @@ std::string fill_minus_op_with_zero(std::string expression) {
 // input: CONCAT($0, ' - ', CAST($1):VARCHAR, ' : ', $2)
 // output: "CONCAT(CONCAT(CONCAT(CONCAT($0, ' - '), CAST($1):VARCHAR), ' : '), $2)"
 std::string convert_concat_expression_into_multiple_binary_concat_ops(std::string expression) {
-	if (expression.find("CONCAT") == expression.npos) {
+	size_t start_concat_pos = expression.find("CONCAT(");
+	if (start_concat_pos == expression.npos) {
 		return expression;
 	}
 
+	std::string concat_expression;
+	bool start_with_concat = false;
+	if (start_concat_pos != 0) {
+		// Let's find out how many `(` there are before `CONCAT`
+		std::string left_expression = expression.substr(0, start_concat_pos);
+		size_t total_open_parenth = StringUtil::findAndCountAllMatches(left_expression, "(");
+
+		std::string reverse_expression(expression);
+		std::reverse(reverse_expression.begin(), reverse_expression.end());
+
+		size_t offset = 0;
+		for (size_t i = 0; i <= total_open_parenth; ++i) {
+			size_t closed_parenth_pos = reverse_expression.find(")");
+			offset += closed_parenth_pos;
+			reverse_expression = reverse_expression.substr(closed_parenth_pos + 1, expression.size() - (closed_parenth_pos + 1));
+		}
+		concat_expression = expression.substr(start_concat_pos, expression.size() - offset - start_concat_pos - 1);
+	} else {
+		start_with_concat = true;
+		concat_expression = expression;
+	}
+
 	// just to remove `CONCAT( )`
-	std::string expression_wo_concat = get_query_part(expression);
+	std::string expression_wo_concat = get_query_part(concat_expression);
 	std::vector<std::string> expressions_to_concat = get_expressions_from_expression_list(expression_wo_concat);
 
 	if (expressions_to_concat.size() < 2) throw std::runtime_error("CONCAT operator must have at least two children, as CONCAT($0, $1) .");
@@ -1182,7 +1205,14 @@ std::string convert_concat_expression_into_multiple_binary_concat_ops(std::strin
 		new_expression = "CONCAT(" + new_expression + ", " + expressions_to_concat[i] + ")";
 	}
 
-	return new_expression;
+	std::string output_expression;
+	if (start_with_concat) {
+		output_expression = new_expression;
+	} else {
+		output_expression = StringUtil::replace(expression, concat_expression, new_expression);
+	}
+
+	return output_expression;
 }
 
 const std::string remove_quotes_from_timestamp_literal(const std::string & scalar_string) {
@@ -1459,4 +1489,40 @@ std::string modify_multi_column_count_expression(std::string expression, std::ve
 	}
 
 	return expression;
+}
+
+std::string get_current_date_or_timestamp(std::string expression, blazingdb::manager::Context * context) {
+    // We want `CURRENT_TIME` holds the same value as `CURRENT_TIMESTAMP`
+	if (expression.find("CURRENT_TIME") != expression.npos) {
+		expression = StringUtil::replace(expression, "CURRENT_TIME", "CURRENT_TIMESTAMP");
+	}
+
+	std::size_t date_pos = expression.find("CURRENT_DATE");
+	std::size_t timestamp_pos = expression.find("CURRENT_TIMESTAMP");
+
+	if (date_pos == expression.npos && timestamp_pos == expression.npos) {
+		return expression;
+	}
+
+    // CURRENT_TIMESTAMP will return a `ms` format
+	std::string	timestamp_str = context->getCurrentTimestamp().substr(0, 23);
+    std::string str_to_replace = "CURRENT_TIMESTAMP";
+
+	// In case CURRENT_DATE we want only the date value
+	if (date_pos != expression.npos) {
+		str_to_replace = "CURRENT_DATE";
+        timestamp_str = timestamp_str.substr(0, 10);
+	}
+
+	return StringUtil::replace(expression, str_to_replace, timestamp_str);
+}
+
+std::string preprocess_expression_for_evaluation(std::string expression, blazingdb::manager::Context * context, std::vector<cudf::data_type> schema) {
+	expression = fill_minus_op_with_zero(expression);
+	expression = convert_concat_expression_into_multiple_binary_concat_ops(expression);
+	expression = get_current_date_or_timestamp(expression, context);
+	expression = convert_ms_to_ns_units(expression);
+	expression = reinterpret_timestamp(expression, schema);
+	expression = apply_interval_conversion(expression, schema);
+  return expression;
 }
