@@ -267,7 +267,8 @@ target_include_directories(blazingsql-io
            PUBLIC      "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>"
                        "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
            PRIVATE     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>"
-           INTERFACE   "$<INSTALL_INTERFACE:include>")
+           INTERFACE   "$<INSTALL_INTERFACE:include>"
+                       "$<INSTALL_INTERFACE:include/blazingdb/io>")
 
 # Add Conda library paths if specified
 if(CONDA_LINK_DIRS)
