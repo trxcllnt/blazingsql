@@ -140,7 +140,7 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 BUILD_ARROW_PYT
 
 endfunction()
 
-set(BLAZINGSQL_IO_VERSION_Arrow 1.0.1)
+set(BLAZINGSQL_IO_VERSION_Arrow 4.0.1)
 
 find_and_configure_arrow(
     ${BLAZINGSQL_IO_VERSION_Arrow}

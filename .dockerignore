@@ -1,0 +1,31 @@
+# BlazingSQL things
+io/build
+io/.cache
+io/compile_commands.json
+engine/build
+engine/.cache
+engine/compile_commands.json
+
+# Python things
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+*.log
+.mypy_cache
+.pytest_cache
+.hypothesis
+
+# Allow .git
+# .git
