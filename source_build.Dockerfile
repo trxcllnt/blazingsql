@@ -158,6 +158,15 @@ RUN export SCCACHE_REGION="${SCCACHE_REGION}" \
  && cd "$RMM_PYTHON_DIR" && python setup.py install --single-version-externally-managed --record=record.txt \
  \
  && export ARROW_HOME="${INSTALL_PREFIX}" \
+ && export PYARROW_WITH_S3=OFF \
+ && export PYARROW_WITH_ORC=ON \
+ && export PYARROW_WITH_CUDA=ON \
+ && export PYARROW_WITH_HDFS=OFF \
+ && export PYARROW_WITH_FLIGHT=OFF \
+ && export PYARROW_WITH_PLASMA=OFF \
+ && export PYARROW_WITH_DATASET=ON \
+ && export PYARROW_WITH_GANDIVA=OFF \
+ && export PYARROW_WITH_PARQUET=ON \
  && export PYARROW_BUILD_TYPE=Release \
  && export PYARROW_CMAKE_GENERATOR=Ninja \
  && export PYARROW_PARALLEL=${PARALLEL_LEVEL} \
