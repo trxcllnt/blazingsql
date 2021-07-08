@@ -118,10 +118,6 @@ ARG CMAKE_CUDA_ARCHITECTURES=ALL
 
 COPY . /opt/blazingsql
 
-ARG CUDF_BRANCH=branch-21.08
-ARG CUDF_GIT_REPO="https://github.com/rapidsai/cudf.git"
-
-# Build and install libarrow and libcudf
 RUN pip install --upgrade \
     "cython>=0.29,<0.30" \
     "nvtx>=0.2.1" \
@@ -138,36 +134,39 @@ RUN pip install --upgrade \
  \
  && export SCCACHE_REGION="${SCCACHE_REGION}" \
  && export SCCACHE_BUCKET="${SCCACHE_BUCKET}" \
+ && export SCCACHE_CACHE_SIZE="${SCCACHE_CACHE_SIZE}" \
  && export SCCACHE_IDLE_TIMEOUT="${SCCACHE_IDLE_TIMEOUT}" \
  && export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
  && export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
- && git clone --depth 1 --branch "$CUDF_BRANCH" "$CUDF_GIT_REPO" /opt/rapids/cudf \
- \
+ # Build and install blazingsql-engine, blazingsql-io, libcudf, librmm, libarrow, and libarrow_cuda
  && cmake -GNinja \
-    -S /opt/rapids/cudf/cpp \
-    -B /opt/rapids/cudf/cpp/build \
+    -S /opt/blazingsql/engine \
+    -B /opt/blazingsql/engine/build \
+    -D CPM_blazingsql-io_SOURCE=/opt/blazingsql/io \
     -D BUILD_TESTS=OFF \
     -D BUILD_BENCHMARKS=OFF \
-    -D CUDF_ENABLE_ARROW_S3=OFF \
-    -D CUDF_ENABLE_ARROW_PYTHON=ON \
-    -D CUDF_ENABLE_ARROW_PARQUET=ON \
+    -D S3_SUPPORT=OFF \
+    -D GCS_SUPPORT=OFF \
+    -D MYSQL_SUPPORT=OFF \
+    -D SQLITE_SUPPORT=OFF \
+    -D POSTGRESQL_SUPPORT=OFF \
     -D DISABLE_DEPRECATION_WARNING=ON \
     -D CMAKE_INSTALL_PREFIX=/usr/local \
     -D CMAKE_C_COMPILER_LAUNCHER=/usr/bin/sccache \
     -D CMAKE_CXX_COMPILER_LAUNCHER=/usr/bin/sccache \
     -D CMAKE_CUDA_COMPILER_LAUNCHER=/usr/bin/sccache \
     -D CMAKE_CUDA_ARCHITECTURES="${CMAKE_CUDA_ARCHITECTURES:-}" \
- && cmake --build /opt/rapids/cudf/cpp/build -j${PARALLEL_LEVEL} -v --target install \
+ && cmake --build /opt/blazingsql/engine/build -j${PARALLEL_LEVEL} -v --target install \
  \
  # Build and install rmm
- && cd /opt/rapids/cudf/cpp/build/_deps/rmm-src/python \
+ && cd /opt/blazingsql/engine/build/_deps/rmm-src/python \
  && link-sccache \
  && PARALLEL_LEVEL=${PARALLEL_LEVEL} python setup.py build_ext -j${PARALLEL_LEVEL} --inplace \
  && python setup.py install --single-version-externally-managed --record=record.txt \
  && unlink-sccache \
  \
  # Build and install pyarrow
- && cd /opt/rapids/cudf/cpp/build/_deps/arrow-src/python \
+ && cd /opt/blazingsql/engine/build/_deps/arrow-src/python \
  && link-sccache \
  && env ARROW_HOME=/usr/local \
         PYARROW_WITH_S3=OFF \
@@ -186,53 +185,21 @@ RUN pip install --upgrade \
  && unlink-sccache \
  \
  # Build and install cudf
- && cp -R /opt/rapids/cudf/cpp/build/_deps/dlpack-src/include/dlpack /usr/local/include/dlpack \
+ && cp -R /opt/blazingsql/engine/build/_deps/dlpack-src/include/dlpack /usr/local/include/dlpack \
  && ln -s /usr/local/include/dlpack /usr/include/dlpack \
  && ln -s /usr/local/include/libcudf /usr/include/libcudf \
- && cd /opt/rapids/cudf/python/cudf \
+ && cd /opt/blazingsql/engine/build/_deps/cudf-src/python/cudf \
  && link-sccache \
  && PARALLEL_LEVEL=${PARALLEL_LEVEL} python setup.py build_ext -j${PARALLEL_LEVEL} --inplace \
  && python setup.py install --single-version-externally-managed --record=record.txt \
  && unlink-sccache \
  \
  # Build and install dask_cudf
- && cd /opt/rapids/cudf/python/dask_cudf \
+ && cd /opt/blazingsql/engine/build/_deps/cudf-src/python/dask_cudf \
  && link-sccache \
  && PARALLEL_LEVEL=${PARALLEL_LEVEL} python setup.py build_ext -j${PARALLEL_LEVEL} --inplace \
  && python setup.py install --single-version-externally-managed --record=record.txt \
  && unlink-sccache \
- \
- # Build and install blazingsql-io
- && cmake -GNinja \
-    -S /opt/blazingsql/io \
-    -B /opt/blazingsql/io/build \
-    -D S3_SUPPORT=OFF \
-    -D GCS_SUPPORT=OFF \
-    -D CMAKE_INSTALL_PREFIX=/usr/local \
-    -D CMAKE_C_COMPILER_LAUNCHER=/usr/bin/sccache \
-    -D CMAKE_CXX_COMPILER_LAUNCHER=/usr/bin/sccache \
-    -D CMAKE_CUDA_COMPILER_LAUNCHER=/usr/bin/sccache \
-    -D CMAKE_CUDA_ARCHITECTURES="${CMAKE_CUDA_ARCHITECTURES:-}" \
- && cmake --build /opt/blazingsql/io/build -j${PARALLEL_LEVEL} -v --target install \
- \
- # Build and install blazingsql-engine
- && cmake -GNinja \
-    -S /opt/blazingsql/engine \
-    -B /opt/blazingsql/engine/build \
-    -D BUILD_TESTS=OFF \
-    -D BUILD_BENCHMARKS=OFF \
-    -D S3_SUPPORT=OFF \
-    -D GCS_SUPPORT=OFF \
-    -D MYSQL_SUPPORT=OFF \
-    -D SQLITE_SUPPORT=OFF \
-    -D POSTGRESQL_SUPPORT=OFF \
-    -D DISABLE_DEPRECATION_WARNING=ON \
-    -D CMAKE_INSTALL_PREFIX=/usr/local \
-    -D CMAKE_C_COMPILER_LAUNCHER=/usr/bin/sccache \
-    -D CMAKE_CXX_COMPILER_LAUNCHER=/usr/bin/sccache \
-    -D CMAKE_CUDA_COMPILER_LAUNCHER=/usr/bin/sccache \
-    -D CMAKE_CUDA_ARCHITECTURES="${CMAKE_CUDA_ARCHITECTURES:-}" \
- && cmake --build /opt/blazingsql/engine/build -j${PARALLEL_LEVEL} -v --target install \
  \
  # Build and install pyblazing
  && cd /opt/blazingsql/pyblazing \
