@@ -16,6 +16,16 @@
 
 function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 BUILD_ARROW_PYTHON)
 
+    if(BUILD_STATIC)
+        if(TARGET arrow_static AND TARGET arrow_cuda_static)
+            return()
+        endif()
+    else()
+        if(TARGET arrow_shared AND TARGET arrow_cuda_shared)
+            return()
+        endif()
+    endif()
+
     set(ARROW_BUILD_SHARED ON)
     set(ARROW_BUILD_STATIC OFF)
     set(ARROW_BUILD_S3 OFF)
