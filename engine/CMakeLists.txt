@@ -254,11 +254,11 @@ find_package(Threads REQUIRED)
 # find PythonLibs
 find_package(PythonLibs)
 # add third party dependencies using CPM
-include(cmake/thirdparty/get_blazingsql_io.cmake)
 include(cmake/thirdparty/get_boost.cmake)
 include(cmake/thirdparty/get_cudf.cmake)
 include(cmake/thirdparty/get_jitify.cmake)
 include(cmake/thirdparty/get_ucx.cmake)
+include(cmake/thirdparty/get_blazingsql_io.cmake)
 
 # if(BLAZINGSQL_ENGINE_BUILD_TESTS)
 #   include(cmake/thirdparty/get_gtest.cmake)
