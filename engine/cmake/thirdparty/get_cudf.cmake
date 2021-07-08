@@ -37,7 +37,10 @@ function(find_and_configure_cudf VERSION)
             SOURCE_SUBDIR          cpp
             OPTIONS                "BUILD_TESTS OFF"
                                    "BUILD_BENCHMARKS OFF"
+                                   "CUDF_ENABLE_ARROW_PYTHON ON"
+                                   "CUDF_ENABLE_ARROW_PARQUET ON"
                                    "CUDF_ENABLE_ARROW_S3 ${S3_SUPPORT}"
+                                   "DISABLE_DEPRECATION_WARNING ${DISABLE_DEPRECATION_WARNING}"
             FIND_PACKAGE_ARGUMENTS "COMPONENTS testing"
     )
 endfunction()
