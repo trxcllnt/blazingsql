@@ -41,15 +41,7 @@ deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitw
       python{$PYTHON_VERSION,$PYTHON_VERSION-dev,$PYTHON_VERSION-distutils} \
       unzip automake autoconf libb2-dev libzstd-dev \
       libtool libibverbs-dev librdmacm-dev libnuma-dev libhwloc-dev \
- && bash -c "echo -e '\
-deb http://archive.ubuntu.com/ubuntu/ xenial universe\n\
-deb http://archive.ubuntu.com/ubuntu/ xenial-updates universe\
-'" >> /etc/apt/sources.list.d/xenial.list \
- && apt update -y || true && apt install -y libibcm-dev \
- && rm /etc/apt/sources.list.d/xenial.list \
- && apt-get autoremove -y \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+ && apt autoremove -y && apt clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
  && update-alternatives --remove-all cc     >/dev/null 2>&1 || true \
  && update-alternatives --remove-all c++    >/dev/null 2>&1 || true \
  && update-alternatives --remove-all gcc    >/dev/null 2>&1 || true \
@@ -87,16 +79,23 @@ ln -s /usr/bin/sccache-gcc /usr/local/bin/gcc" | tee /usr/bin/link-sccache >/dev
  && bash -c 'echo -e "#!/bin/bash -e\n\
 rm /usr/local/bin/gcc >/dev/null 2>&1 || true" | tee /usr/bin/unlink-sccache >/dev/null' \
  && chmod +x /usr/bin/unlink-sccache \
+ \
  # Install UCX
- && git clone --depth 1 --branch v1.9.x https://github.com/openucx/ucx.git /opt/ucx \
- && cd  /opt/ucx \
- && curl -LO https://raw.githubusercontent.com/rapidsai/ucx-split-feedstock/11ad7a3c1f25514df8064930f69c310be4fd55dc/recipe/cuda-alloc-rcache.patch \
- && git apply cuda-alloc-rcache.patch \
- && sed -i 's/io_demo_LDADD =/io_demo_LDADD = $(CUDA_LDFLAGS)/' test/apps/iodemo/Makefile.am \
- && ./autogen.sh && mkdir build && cd build \
- && ../contrib/configure-release --prefix=/usr/local --with-cuda="$CUDA_HOME" --enable-mt CPPFLAGS="-I/$CUDA_HOME/include" \
- && make -j install \
- && cd / && rm -rf /opt/ucx
+ && git clone --depth 1 --branch v1.9.x https://github.com/openucx/ucx.git /tmp/ucx \
+ && curl -o /tmp/cuda-alloc-rcache.patch \
+         -L https://raw.githubusercontent.com/rapidsai/ucx-split-feedstock/11ad7a3c1f25514df8064930f69c310be4fd55dc/recipe/cuda-alloc-rcache.patch \
+ && cd /tmp/ucx && git apply /tmp/cuda-alloc-rcache.patch && rm /tmp/cuda-alloc-rcache.patch \
+ && sed -i 's/io_demo_LDADD =/io_demo_LDADD = $(CUDA_LDFLAGS)/' /tmp/ucx/test/apps/iodemo/Makefile.am \
+ && /tmp/ucx/autogen.sh && mkdir /tmp/ucx/build && cd /tmp/ucx/build \
+ && ../contrib/configure-release \
+    --prefix=/usr/local \
+    --without-java --with-cuda=/usr/local/cuda \
+    --enable-mt CPPFLAGS=-I/usr/local/cuda/include \
+ && make -C /tmp/ucx/build -j install \
+ && cd / \
+ \
+ # Clean up
+ && apt autoremove -y && apt clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ENV CC="/usr/bin/gcc"
 ENV CXX="/usr/bin/g++"
@@ -277,8 +276,11 @@ RUN export DEBIAN_FRONTEND=noninteractive \
  # Clean up
  && apt autoremove -y && apt clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-COPY --from=blazingsql-build /usr/local/lib /usr/local/lib
-COPY --from=blazingsql-build /usr/local/include /usr/local/include
+COPY --from=blazingsql-build /usr/local/lib                  /usr/local/lib
+COPY --from=blazingsql-build /usr/local/include              /usr/local/include
+COPY --from=blazingsql-build /usr/local/bin/ucx_info         /usr/local/bin/ucx_info
+COPY --from=blazingsql-build /usr/local/bin/ucx_perftest     /usr/local/bin/ucx_perftest
+COPY --from=blazingsql-build /usr/local/bin/ucx_read_profile /usr/local/bin/ucx_read_profile
 
 ENV CUDA_HOME=/usr/local/cuda
 ENV PATH="${PATH:+$PATH:}${CUDA_HOME}/bin:/usr/local/bin"
