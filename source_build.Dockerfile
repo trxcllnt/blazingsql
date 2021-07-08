@@ -143,7 +143,7 @@ RUN pip install --upgrade \
  && export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
  && git clone --depth 1 --branch "$CUDF_BRANCH" "$CUDF_GIT_REPO" /opt/rapids/cudf \
  \
- && cmake \
+ && cmake -GNinja \
     -S /opt/rapids/cudf/cpp \
     -B /opt/rapids/cudf/cpp/build \
     -D BUILD_TESTS=OFF \
