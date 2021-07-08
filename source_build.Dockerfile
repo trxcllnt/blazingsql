@@ -120,7 +120,6 @@ COPY . /opt/blazingsql
 ARG CUDF_BRANCH=branch-21.08
 ARG CUDF_GIT_REPO="https://github.com/rapidsai/cudf.git"
 
-# Build and install libarrow and libcudf
 RUN pip install --upgrade \
     "cython>=0.29,<0.30" \
     "nvtx>=0.2.1" \
@@ -141,8 +140,9 @@ RUN pip install --upgrade \
  && export SCCACHE_IDLE_TIMEOUT="${SCCACHE_IDLE_TIMEOUT}" \
  && export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
  && export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
- && git clone --depth 1 --branch "$CUDF_BRANCH" "$CUDF_GIT_REPO" /opt/rapids/cudf \
  \
+ # Build and install libarrow and libcudf
+ && git clone --depth 1 --branch "$CUDF_BRANCH" "$CUDF_GIT_REPO" /opt/rapids/cudf \
  && cmake -GNinja \
     -S /opt/rapids/cudf/cpp \
     -B /opt/rapids/cudf/cpp/build \
@@ -202,23 +202,11 @@ RUN pip install --upgrade \
  && python setup.py install --single-version-externally-managed --record=record.txt \
  && unlink-sccache \
  \
- # Build and install blazingsql-io
- && cmake -GNinja \
-    -S /opt/blazingsql/io \
-    -B /opt/blazingsql/io/build \
-    -D S3_SUPPORT=OFF \
-    -D GCS_SUPPORT=OFF \
-    -D CMAKE_INSTALL_PREFIX=/usr/local \
-    -D CMAKE_C_COMPILER_LAUNCHER=/usr/bin/sccache \
-    -D CMAKE_CXX_COMPILER_LAUNCHER=/usr/bin/sccache \
-    -D CMAKE_CUDA_COMPILER_LAUNCHER=/usr/bin/sccache \
-    -D CMAKE_CUDA_ARCHITECTURES="${CMAKE_CUDA_ARCHITECTURES:-}" \
- && cmake --build /opt/blazingsql/io/build -j${PARALLEL_LEVEL} -v --target install \
- \
- # Build and install blazingsql-engine
+ # Build and install blazingsql-engine and blazingsql-io
  && cmake -GNinja \
     -S /opt/blazingsql/engine \
     -B /opt/blazingsql/engine/build \
+    -D CPM_blazingsql-io_SOURCE=/opt/blazingsql/io \
     -D BUILD_TESTS=OFF \
     -D BUILD_BENCHMARKS=OFF \
     -D S3_SUPPORT=OFF \
