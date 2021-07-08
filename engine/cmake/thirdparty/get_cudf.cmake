@@ -31,8 +31,10 @@ function(find_and_configure_cudf VERSION)
         BUILD_EXPORT_SET       blazingsql-engine-exports
         INSTALL_EXPORT_SET     blazingsql-engine-exports
         CPM_ARGS
-            GIT_REPOSITORY         https://github.com/rapidsai/cudf.git
-            GIT_TAG                branch-${MAJOR_AND_MINOR}
+            # GIT_REPOSITORY         https://github.com/rapidsai/cudf.git
+            # GIT_TAG                branch-${MAJOR_AND_MINOR}
+            GIT_REPOSITORY         https://github.com/trxcllnt/cudf.git
+            GIT_TAG                fea/optionally-build-arrow-python
             GIT_SHALLOW            TRUE
             SOURCE_SUBDIR          cpp
             OPTIONS                "BUILD_TESTS OFF"
