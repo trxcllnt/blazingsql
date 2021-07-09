@@ -117,9 +117,6 @@ ARG CMAKE_CUDA_ARCHITECTURES=ALL
 
 COPY . /opt/blazingsql
 
-ARG CUDF_BRANCH=branch-21.08
-ARG CUDF_GIT_REPO="https://github.com/rapidsai/cudf.git"
-
 RUN pip install --upgrade \
     "cython>=0.29,<0.30" \
     "nvtx>=0.2.1" \
@@ -140,69 +137,7 @@ RUN pip install --upgrade \
  && export SCCACHE_IDLE_TIMEOUT="${SCCACHE_IDLE_TIMEOUT}" \
  && export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
  && export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
- \
- # Build and install libarrow and libcudf
- && git clone --depth 1 --branch "$CUDF_BRANCH" "$CUDF_GIT_REPO" /opt/rapids/cudf \
- && cmake -GNinja \
-    -S /opt/rapids/cudf/cpp \
-    -B /opt/rapids/cudf/cpp/build \
-    -D BUILD_TESTS=OFF \
-    -D BUILD_BENCHMARKS=OFF \
-    -D CUDF_ENABLE_ARROW_S3=OFF \
-    -D CUDF_ENABLE_ARROW_PYTHON=ON \
-    -D CUDF_ENABLE_ARROW_PARQUET=ON \
-    -D DISABLE_DEPRECATION_WARNING=ON \
-    -D CMAKE_INSTALL_PREFIX=/usr/local \
-    -D CMAKE_C_COMPILER_LAUNCHER=/usr/bin/sccache \
-    -D CMAKE_CXX_COMPILER_LAUNCHER=/usr/bin/sccache \
-    -D CMAKE_CUDA_COMPILER_LAUNCHER=/usr/bin/sccache \
-    -D CMAKE_CUDA_ARCHITECTURES="${CMAKE_CUDA_ARCHITECTURES:-}" \
- && cmake --build /opt/rapids/cudf/cpp/build -j${PARALLEL_LEVEL} -v --target install \
- \
- # Build and install rmm
- && cd /opt/rapids/cudf/cpp/build/_deps/rmm-src/python \
- && link-sccache \
- && PARALLEL_LEVEL=${PARALLEL_LEVEL} python setup.py build_ext -j${PARALLEL_LEVEL} --inplace \
- && python setup.py install --single-version-externally-managed --record=record.txt \
- && unlink-sccache \
- \
- # Build and install pyarrow
- && cd /opt/rapids/cudf/cpp/build/_deps/arrow-src/python \
- && link-sccache \
- && env ARROW_HOME=/usr/local \
-        PYARROW_WITH_S3=OFF \
-        PYARROW_WITH_ORC=OFF \
-        PYARROW_WITH_CUDA=ON \
-        PYARROW_WITH_HDFS=OFF \
-        PYARROW_WITH_FLIGHT=OFF \
-        PYARROW_WITH_PLASMA=OFF \
-        PYARROW_WITH_DATASET=ON \
-        PYARROW_WITH_GANDIVA=OFF \
-        PYARROW_WITH_PARQUET=ON \
-        PYARROW_BUILD_TYPE=Release \
-        PYARROW_CMAKE_GENERATOR=Ninja \
-        PYARROW_PARALLEL=${PARALLEL_LEVEL} \
-    python setup.py install --single-version-externally-managed --record=record.txt \
- && unlink-sccache \
- \
- # Build and install cudf
- && cp -R /opt/rapids/cudf/cpp/build/_deps/dlpack-src/include/dlpack /usr/local/include/dlpack \
- && ln -s /usr/local/include/dlpack /usr/include/dlpack \
- && ln -s /usr/local/include/libcudf /usr/include/libcudf \
- && cd /opt/rapids/cudf/python/cudf \
- && link-sccache \
- && PARALLEL_LEVEL=${PARALLEL_LEVEL} python setup.py build_ext -j${PARALLEL_LEVEL} --inplace \
- && python setup.py install --single-version-externally-managed --record=record.txt \
- && unlink-sccache \
- \
- # Build and install dask_cudf
- && cd /opt/rapids/cudf/python/dask_cudf \
- && link-sccache \
- && PARALLEL_LEVEL=${PARALLEL_LEVEL} python setup.py build_ext -j${PARALLEL_LEVEL} --inplace \
- && python setup.py install --single-version-externally-managed --record=record.txt \
- && unlink-sccache \
- \
- # Build and install blazingsql-engine and blazingsql-io
+ # Build and install blazingsql-engine, blazingsql-io, libcudf, librmm, libarrow, and libarrow_cuda
  && cmake -GNinja \
     -S /opt/blazingsql/engine \
     -B /opt/blazingsql/engine/build \
@@ -221,6 +156,49 @@ RUN pip install --upgrade \
     -D CMAKE_CUDA_COMPILER_LAUNCHER=/usr/bin/sccache \
     -D CMAKE_CUDA_ARCHITECTURES="${CMAKE_CUDA_ARCHITECTURES:-}" \
  && cmake --build /opt/blazingsql/engine/build -j${PARALLEL_LEVEL} -v --target install \
+ \
+ # Build and install rmm
+ && cd /opt/blazingsql/engine/build/_deps/rmm-src/python \
+ && link-sccache \
+ && PARALLEL_LEVEL=${PARALLEL_LEVEL} python setup.py build_ext -j${PARALLEL_LEVEL} --inplace \
+ && python setup.py install --single-version-externally-managed --record=record.txt \
+ && unlink-sccache \
+ \
+ # Build and install pyarrow
+ && cd /opt/blazingsql/engine/build/_deps/arrow-src/python \
+ && link-sccache \
+ && env ARROW_HOME=/usr/local \
+        PYARROW_WITH_S3=OFF \
+        PYARROW_WITH_ORC=OFF \
+        PYARROW_WITH_CUDA=ON \
+        PYARROW_WITH_HDFS=OFF \
+        PYARROW_WITH_FLIGHT=OFF \
+        PYARROW_WITH_PLASMA=OFF \
+        PYARROW_WITH_DATASET=ON \
+        PYARROW_WITH_GANDIVA=OFF \
+        PYARROW_WITH_PARQUET=ON \
+        PYARROW_BUILD_TYPE=Release \
+        PYARROW_CMAKE_GENERATOR=Ninja \
+        PYARROW_PARALLEL=${PARALLEL_LEVEL} \
+    python setup.py install --single-version-externally-managed --record=record.txt \
+ && unlink-sccache \
+ \
+ # Build and install cudf
+ && cp -R /opt/blazingsql/engine/build/_deps/dlpack-src/include/dlpack /usr/local/include/dlpack \
+ && ln -s /usr/local/include/dlpack /usr/include/dlpack \
+ && ln -s /usr/local/include/libcudf /usr/include/libcudf \
+ && cd /opt/blazingsql/engine/build/_deps/cudf-src/python/cudf \
+ && link-sccache \
+ && PARALLEL_LEVEL=${PARALLEL_LEVEL} python setup.py build_ext -j${PARALLEL_LEVEL} --inplace \
+ && python setup.py install --single-version-externally-managed --record=record.txt \
+ && unlink-sccache \
+ \
+ # Build and install dask_cudf
+ && cd /opt/blazingsql/engine/build/_deps/cudf-src/python/dask_cudf \
+ && link-sccache \
+ && PARALLEL_LEVEL=${PARALLEL_LEVEL} python setup.py build_ext -j${PARALLEL_LEVEL} --inplace \
+ && python setup.py install --single-version-externally-managed --record=record.txt \
+ && unlink-sccache \
  \
  # Build and install pyblazing
  && cd /opt/blazingsql/pyblazing \

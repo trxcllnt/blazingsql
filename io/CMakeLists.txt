@@ -315,22 +315,6 @@ file(COPY ${PROJECT_SOURCE_DIR}/src/
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
         DESTINATION include)
 
-if(TARGET arrow_shared)
-    get_target_property(arrow_is_imported arrow_shared IMPORTED)
-    if(NOT arrow_is_imported)
-        export(TARGETS arrow_shared arrow_cuda_shared
-            FILE ${BLAZINGSQL_IO_BINARY_DIR}/blazingsql-io-arrow-targets.cmake
-            NAMESPACE blazingdb::)
-    endif()
-elseif(TARGET arrow_static)
-    get_target_property(arrow_is_imported arrow_static IMPORTED)
-    if(NOT arrow_is_imported)
-        export(TARGETS arrow_static arrow_cuda_static
-            FILE ${BLAZINGSQL_IO_BINARY_DIR}/blazingsql-io-arrow-targets.cmake
-            NAMESPACE blazingdb::)
-    endif()
-endif()
-
 ##################################################################################################
 # - install export -------------------------------------------------------------------------------
 set(doc_string

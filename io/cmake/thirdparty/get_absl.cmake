@@ -20,14 +20,30 @@ function(find_and_configure_abseil VERSION)
         return()
     endif()
 
-    rapids_cpm_find(absl ${VERSION}
+    rapids_cpm_find(absl   ${VERSION}
+        GLOBAL_TARGETS     absl::time
+                           absl::str_format_internal
+                           absl::strings
+                           absl::strings_internal
+                           absl::time_zone
+                           absl::base
+                           absl::int128
+                           absl::raw_logging_internal
+                           absl::spinlock_wait
+                           absl::bad_variant_access
+                           absl::civil_time
+        BUILD_EXPORT_SET   blazingsql-io-exports
+        INSTALL_EXPORT_SET blazingsql-io-exports
         CPM_ARGS
-            GIT_REPOSITORY         https://github.com/abseil/abseil-cpp.git
-            GIT_TAG                ${VERSION}
-            GIT_SHALLOW            TRUE
-            OPTIONS                "BUILD_TESTING OFF"
-                                   "ABSL_ENABLE_INSTALL ON"
+            GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
+            GIT_TAG        ${VERSION}
+            GIT_SHALLOW    TRUE
+            OPTIONS        "BUILD_TESTING OFF"
+                           "ABSL_ENABLE_INSTALL ON"
     )
+
+    rapids_export(BUILD absl EXPORT_SET abslTargets)
+
 endfunction()
 
 set(BLAZINGSQL_ENGINE_MIN_VERSION_abseil "20210324.2")
