@@ -18,10 +18,18 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 BUILD_ARROW_PYT
 
     if(BUILD_STATIC)
         if(TARGET arrow_static AND TARGET arrow_cuda_static)
+            list(APPEND ARROW_LIBRARIES arrow_static)
+            list(APPEND ARROW_LIBRARIES arrow_cuda_static)
+            set(ARROW_FOUND TRUE PARENT_SCOPE)
+            set(ARROW_LIBRARIES ${ARROW_LIBRARIES} PARENT_SCOPE)
             return()
         endif()
     else()
         if(TARGET arrow_shared AND TARGET arrow_cuda_shared)
+            list(APPEND ARROW_LIBRARIES arrow_shared)
+            list(APPEND ARROW_LIBRARIES arrow_cuda_shared)
+            set(ARROW_FOUND TRUE PARENT_SCOPE)
+            set(ARROW_LIBRARIES ${ARROW_LIBRARIES} PARENT_SCOPE)
             return()
         endif()
     endif()
@@ -148,6 +156,22 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 BUILD_ARROW_PYT
 
     set(ARROW_FOUND "${ARROW_FOUND}" PARENT_SCOPE)
     set(ARROW_LIBRARIES "${ARROW_LIBRARIES}" PARENT_SCOPE)
+
+    if(TARGET arrow_shared)
+        get_target_property(arrow_is_imported arrow_shared IMPORTED)
+        if(NOT arrow_is_imported)
+            export(TARGETS arrow_shared arrow_cuda_shared
+                FILE ${BLAZINGSQL_IO_BINARY_DIR}/blazingsql-io-arrow-targets.cmake
+                NAMESPACE blazingdb::)
+        endif()
+    elseif(TARGET arrow_static)
+        get_target_property(arrow_is_imported arrow_static IMPORTED)
+        if(NOT arrow_is_imported)
+            export(TARGETS arrow_static arrow_cuda_static
+                FILE ${BLAZINGSQL_IO_BINARY_DIR}/blazingsql-io-arrow-targets.cmake
+                NAMESPACE blazingdb::)
+        endif()
+    endif()
 
 endfunction()
 
