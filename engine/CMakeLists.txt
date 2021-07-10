@@ -148,6 +148,7 @@ option(S3_SUPPORT "Enables support for S3 fileSystem" ON)
 option(MYSQL_SUPPORT "Enables support for MySQL database" ON)
 option(SQLITE_SUPPORT "Enables support for SQLite database" ON)
 option(POSTGRESQL_SUPPORT "Enables support for Postgre database" ON)
+option(BLAZINGSQL_ENGINE_ENABLE_DEBUG_UTILS "Build BSQL Debug utilities" OFF)
 option(BLAZINGSQL_ENGINE_BUILD_ARROW_PYTHON "Build Cython error utilities" ON)
 option(BLAZINGSQL_ENGINE_WITH_PYTHON_ERRORS "Build Cython error utilities" ON)
 
@@ -584,7 +585,7 @@ add_library(blazingdb::blazingsql-engine ALIAS blazingsql-engine)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo" OR "$ENV{CONDA_BUILD}" STREQUAL "1")
     message(STATUS "This is a release build so the final runtime binaries will not depend on gtest")
-else()
+elseif(BLAZINGSQL_ENGINE_ENABLE_DEBUG_UTILS)
     message(WARNING "This is not a release build so the final runtime binaries will depend on gtest (BSQLDBGUTILS precompiler definition is set)")
     add_definitions(-DBSQLDBGUTILS) # see DebuggingUtils.cpp
     target_link_libraries(blazingsql-engine
