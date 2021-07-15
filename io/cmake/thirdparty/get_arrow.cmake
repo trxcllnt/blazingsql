@@ -63,6 +63,10 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 BUILD_ARROW_PYT
     message(STATUS "ARROW_BUILD_STATIC: ${ARROW_BUILD_STATIC}")
     message(STATUS "ARROW_BUILD_SHARED: ${ARROW_BUILD_SHARED}")
 
+    # Set this so Arrow correctly finds the CUDA toolkit when the build machine
+    # does not have the CUDA driver installed. This must be an env var.
+    set(ENV{CUDA_LIB_PATH} "${CUDAToolkit_LIBRARY_DIR}/stubs")
+
     cmake_language(CALL ${CPMAddOrFindPackage}
         NAME            Arrow
         VERSION         ${VERSION}
