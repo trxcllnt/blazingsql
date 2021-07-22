@@ -503,7 +503,7 @@ target_link_libraries(blazingsql-engine
     # zmq
     # cudart
 
-    # ${UCX_LIBRARIES}
+    ucp
 
     # parquet
     # cudf::arrow_shared
