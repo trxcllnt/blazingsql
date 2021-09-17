@@ -14,7 +14,7 @@
 # limitations under the License.
 #=============================================================================
 
-function(find_and_configure_cudf VERSION)
+function(find_and_configure_cudf VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENABLE_PYTHON)
 
     if(TARGET cudf::cudf)
         return()
@@ -37,9 +37,11 @@ function(find_and_configure_cudf VERSION)
             SOURCE_SUBDIR          cpp
             OPTIONS                "BUILD_TESTS OFF"
                                    "BUILD_BENCHMARKS OFF"
-                                   "CUDF_ENABLE_ARROW_PYTHON ON"
+                                   "CUDF_USE_ARROW_STATIC ${BUILD_STATIC}"
+                                   "CUDF_ENABLE_ARROW_S3 ${ENABLE_S3}"
+                                   "CUDF_ENABLE_ARROW_ORC ${ENABLE_ORC}"
+                                   "CUDF_ENABLE_ARROW_PYTHON ${ENABLE_PYTHON}"
                                    "CUDF_ENABLE_ARROW_PARQUET ON"
-                                   "CUDF_ENABLE_ARROW_S3 ${S3_SUPPORT}"
                                    "DISABLE_DEPRECATION_WARNING ${DISABLE_DEPRECATION_WARNING}"
             FIND_PACKAGE_ARGUMENTS "COMPONENTS testing"
     )
@@ -47,4 +49,10 @@ endfunction()
 
 set(BLAZINGSQL_ENGINE_MIN_VERSION_cudf "${BLAZINGSQL_ENGINE_VERSION_MAJOR}.${BLAZINGSQL_ENGINE_VERSION_MINOR}.00")
 
-find_and_configure_cudf(${BLAZINGSQL_ENGINE_MIN_VERSION_cudf})
+find_and_configure_cudf(
+    ${BLAZINGSQL_ENGINE_MIN_VERSION_cudf}
+    ${BLAZINGSQL_ENGINE_USE_ARROW_STATIC}
+    ${S3_SUPPORT}
+    ${BLAZINGSQL_ENGINE_BUILD_ARROW_ORC}
+    ${BLAZINGSQL_ENGINE_BUILD_ARROW_PYTHON}
+)

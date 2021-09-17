@@ -14,7 +14,7 @@
 # limitations under the License.
 #=============================================================================
 
-function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 BUILD_ARROW_PYTHON)
+function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENABLE_PYTHON)
 
     if(BUILD_STATIC)
         if(TARGET arrow_static AND TARGET arrow_cuda_static)
@@ -36,7 +36,6 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 BUILD_ARROW_PYT
 
     set(ARROW_BUILD_SHARED ON)
     set(ARROW_BUILD_STATIC OFF)
-    set(ARROW_BUILD_S3 OFF)
     set(CPMAddOrFindPackage CPMFindPackage)
 
     if(NOT ARROW_ARMV8_ARCH)
@@ -54,14 +53,14 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 BUILD_ARROW_PYT
         set(CPMAddOrFindPackage CPMAddPackage)
     endif()
 
-    if(ENABLE_S3)
-        set(ARROW_BUILD_S3 ON)
+    set(ARROW_PYTHON_OPTIONS "")
+    if(ENABLE_PYTHON)
+        list(APPEND ARROW_PYTHON_OPTIONS "ARROW_PYTHON ON")
+        # Arrow's logic to build Boost from source is busted, so we have to get it from the system.
+        list(APPEND ARROW_PYTHON_OPTIONS "BOOST_SOURCE SYSTEM")
+        list(APPEND ARROW_PYTHON_OPTIONS "Thrift_SOURCE BUNDLED")
+        list(APPEND ARROW_PYTHON_OPTIONS "ARROW_DEPENDENCY_SOURCE AUTO")
     endif()
-
-    message(STATUS "ENABLE_S3: ${ENABLE_S3}")
-    message(STATUS "ARROW_BUILD_S3: ${ARROW_BUILD_S3}")
-    message(STATUS "ARROW_BUILD_STATIC: ${ARROW_BUILD_STATIC}")
-    message(STATUS "ARROW_BUILD_SHARED: ${ARROW_BUILD_SHARED}")
 
     # Set this so Arrow correctly finds the CUDA toolkit when the build machine
     # does not have the CUDA driver installed. This must be an env var.
@@ -78,14 +77,15 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 BUILD_ARROW_PYT
                         "CUDA_USE_STATIC_CUDA_RUNTIME ${CUDA_STATIC_RUNTIME}"
                         "ARROW_IPC ON"
                         "ARROW_CUDA ON"
-                        "ARROW_PYTHON ${BUILD_ARROW_PYTHON}"
                         "ARROW_DATASET ON"
                         "ARROW_WITH_BACKTRACE ON"
                         "ARROW_CXXFLAGS -w"
                         "ARROW_JEMALLOC OFF"
-                        "ARROW_S3 ${ARROW_BUILD_S3}"
+                        "ARROW_S3 ${ENABLE_S3}"
+                        "ARROW_ORC ${ENABLE_ORC}"
                         # needed by blazingsql-io
                         "ARROW_PARQUET ON"
+                        ${ARROW_PYTHON_OPTIONS}
                         # the next two lines... WTF
                         "ARROW_DEPENDENCY_SOURCE BUNDLED"
                         "BOOST_SOURCE SYSTEM"
@@ -184,5 +184,6 @@ find_and_configure_arrow(
     ${BLAZINGSQL_IO_VERSION_Arrow}
     ${BLAZINGSQL_IO_USE_ARROW_STATIC}
     ${S3_SUPPORT}
+    ${BLAZINGSQL_IO_BUILD_ARROW_ORC}
     ${BLAZINGSQL_IO_BUILD_ARROW_PYTHON}
 )

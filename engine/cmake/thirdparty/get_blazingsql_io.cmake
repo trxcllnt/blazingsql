@@ -14,7 +14,7 @@
 # limitations under the License.
 #=============================================================================
 
-function(find_and_configure_blazingsql_io VERSION)
+function(find_and_configure_blazingsql_io VERSION BUILD_STATIC ENABLE_S3 ENABLE_GCS ENABLE_ORC ENABLE_PYTHON)
 
     if(TARGET blazingdb::blazingsql-io)
         return()
@@ -37,11 +37,21 @@ function(find_and_configure_blazingsql_io VERSION)
             SOURCE_SUBDIR          io
             OPTIONS                "BUILD_TESTS OFF"
                                    "BUILD_BENCHMARKS OFF"
-                                   "S3_SUPPORT ${S3_SUPPORT}"
-                                   "GCS_SUPPORT ${GCS_SUPPORT}"
+                                   "S3_SUPPORT ${ENABLE_S3}"
+                                   "GCS_SUPPORT ${ENABLE_GCS}"
+                                   "BLAZINGSQL_IO_USE_ARROW_STATIC ${BUILD_STATIC}"
+                                   "BLAZINGSQL_IO_BUILD_ARROW_ORC ${ENABLE_ORC}"
+                                   "BLAZINGSQL_IO_BUILD_ARROW_PYTHON ${ENABLE_PYTHON}"
     )
 endfunction()
 
 set(BLAZINGSQL_ENGINE_MIN_VERSION_blazingsql_io "${BLAZINGSQL_ENGINE_VERSION_MAJOR}.${BLAZINGSQL_ENGINE_VERSION_MINOR}.00")
 
-find_and_configure_blazingsql_io(${BLAZINGSQL_ENGINE_MIN_VERSION_blazingsql_io})
+find_and_configure_blazingsql_io(
+    ${BLAZINGSQL_ENGINE_MIN_VERSION_blazingsql_io}
+    ${BLAZINGSQL_ENGINE_USE_ARROW_STATIC}
+    ${S3_SUPPORT}
+    ${GCS_SUPPORT}
+    ${BLAZINGSQL_ENGINE_BUILD_ARROW_ORC}
+    ${BLAZINGSQL_ENGINE_BUILD_ARROW_PYTHON}
+)

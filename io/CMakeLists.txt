@@ -57,11 +57,14 @@ message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 option(GCS_SUPPORT "Enables support for GCS fileSystem" ON)
 option(S3_SUPPORT "Enables support for S3 fileSystem" ON)
 option(BLAZINGSQL_IO_USE_ARROW_STATIC "Build and statically link Arrow libraries" OFF)
+option(BLAZINGSQL_IO_BUILD_ARROW_ORC "Build the Arrow ORC adapter" ON)
 option(BLAZINGSQL_IO_BUILD_ARROW_PYTHON "Build Arrow libraries with Python support" ON)
 
 message(STATUS "GCS_SUPPORT: ${GCS_SUPPORT}")
 message(STATUS "S3_SUPPORT: ${S3_SUPPORT}")
 message(STATUS "BLAZINGSQL_IO_USE_ARROW_STATIC: ${BLAZINGSQL_IO_USE_ARROW_STATIC}")
+message(STATUS "BLAZINGSQL_IO_BUILD_ARROW_ORC: ${BLAZINGSQL_IO_BUILD_ARROW_ORC}")
+message(STATUS "BLAZINGSQL_IO_BUILD_ARROW_PYTHON: ${BLAZINGSQL_IO_BUILD_ARROW_PYTHON}")
 
 ###################################################################################################
 # - conda environment -----------------------------------------------------------------------------

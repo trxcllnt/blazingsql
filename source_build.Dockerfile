@@ -39,7 +39,7 @@ deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitw
       libboost-{regex,system,filesystem}-dev \
       cmake curl libssl-dev libcurl4-openssl-dev zlib1g-dev \
       python{$PYTHON_VERSION,$PYTHON_VERSION-dev,$PYTHON_VERSION-distutils} \
-      unzip automake autoconf libb2-dev libzstd-dev \
+      unzip automake autoconf libb2-dev libzstd-dev liblz4-dev \
       libtool libibverbs-dev librdmacm-dev libnuma-dev libhwloc-dev \
  && apt autoremove -y && apt clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
  && update-alternatives --remove-all cc     >/dev/null 2>&1 || true \
@@ -118,18 +118,19 @@ ARG CMAKE_CUDA_ARCHITECTURES=ALL
 COPY . /opt/blazingsql
 
 RUN pip install --upgrade \
-    "cython>=0.29,<0.30" \
-    "nvtx>=0.2.1" \
-    "numba>=0.53.1" \
-    "fsspec>=0.6.0" \
-    "fastavro>=0.22.9" \
-    "transformers>=4.8" \
-    "pandas>=1.0,<1.3.0dev0" \
-    "cmake-setuptools>=0.1.3" \
-    "cupy-cuda112>7.1.0,<10.0.0a0" \
-    "git+https://github.com/dask/dask.git@main" \
-    "git+https://github.com/dask/distributed.git@main" \
-    "git+https://github.com/rapidsai/dask-cuda.git@branch-21.08" \
+    "cython==0.29.24" \
+    "nvtx==0.2.3" \
+    "numba==0.53.1" \
+    "numpy==1.19.4" \
+    "fsspec==2021.7.0" \
+    "fastavro==1.4.4" \
+    "transformers==4.9.1" \
+    "pandas==1.2.5" \
+    "cmake-setuptools==0.1.3" \
+    "cupy-cuda112==9.2.0" \
+    "dask==2021.07.1" \
+    "distributed==2021.07.1" \
+    "dask-cuda==21.8.0" \
  \
  && export SCCACHE_REGION="${SCCACHE_REGION}" \
  && export SCCACHE_BUCKET="${SCCACHE_BUCKET}" \
@@ -169,7 +170,7 @@ RUN pip install --upgrade \
  && link-sccache \
  && env ARROW_HOME=/usr/local \
         PYARROW_WITH_S3=OFF \
-        PYARROW_WITH_ORC=OFF \
+        PYARROW_WITH_ORC=ON \
         PYARROW_WITH_CUDA=ON \
         PYARROW_WITH_HDFS=OFF \
         PYARROW_WITH_FLIGHT=OFF \
@@ -227,7 +228,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
       curl libssl-dev \
       python{3.8,3.8-distutils} \
       libboost-{regex,system,filesystem}-dev \
-      libb2-dev libzstd-dev libibverbs-dev librdmacm-dev libnuma-dev libhwloc-dev \
+      libb2-dev libzstd-dev liblz4-dev libibverbs-dev librdmacm-dev libnuma-dev libhwloc-dev \
  && update-alternatives --remove-all python >/dev/null 2>&1 || true \
  # Set python${PYTHON_VERSION} as the default python
  && update-alternatives --install /usr/bin/python python $(realpath $(which python${PYTHON_VERSION})) 1 \
