@@ -22,7 +22,7 @@ include(FetchContent)
 FetchContent_Declare(
   rapids-cmake
   GIT_REPOSITORY https://github.com/rapidsai/rapids-cmake.git
-  GIT_TAG        origin/branch-21.08
+  GIT_TAG        origin/branch-21.10
   )
 FetchContent_MakeAvailable(rapids-cmake)
 include(rapids-cmake)
@@ -33,7 +33,7 @@ include(rapids-find)
 
 rapids_cuda_init_architectures(BLAZINGSQL_IO)
 
-PROJECT(BLAZINGSQL_IO VERSION 21.08.00 LANGUAGES CXX)
+PROJECT(BLAZINGSQL_IO VERSION 21.10.00 LANGUAGES CXX)
 
 # Write the version header
 include(cmake/modules/version.cmake)
