@@ -159,13 +159,13 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
     if(Arrow_ADDED)
         rapids_export(BUILD Arrow
           VERSION ${VERSION}
-          EXPORT_SET blazingsql-io-exports
+          EXPORT_SET arrow_targets
           GLOBAL_TARGETS arrow_shared arrow_static
           NAMESPACE blazingdb::)
 
         rapids_export(BUILD ArrowCUDA
           VERSION ${VERSION}
-          EXPORT_SET blazingsql-io-exports
+          EXPORT_SET arrow_cuda_targets
           GLOBAL_TARGETS arrow_cuda_shared arrow_cuda_static
           NAMESPACE blazingdb::)
     endif()
@@ -181,8 +181,8 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
     rapids_export_package(BUILD ArrowCUDA blazingsql-io-exports)
 
     include("${rapids-cmake-dir}/export/find_package_root.cmake")
-    rapids_export_find_package_root(BUILD Arrow [=[${CMAKE_CURRENT_LIST_DIR}]=] blazingsql-io-exports)
-    rapids_export_find_package_root(BUILD ArrowCUDA [=[${CMAKE_CURRENT_LIST_DIR}]=] blazingsql-io-exports)
+    rapids_export_find_package_root(BUILD Arrow [=[${CMAKE_CURRENT_LIST_DIR}]=] arrow_targets)
+    rapids_export_find_package_root(BUILD ArrowCUDA [=[${CMAKE_CURRENT_LIST_DIR}]=] arrow_cuda_targets)
 
     set(ARROW_FOUND "${ARROW_FOUND}" PARENT_SCOPE)
     set(ARROW_LIBRARIES "${ARROW_LIBRARIES}" PARENT_SCOPE)
