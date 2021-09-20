@@ -336,10 +336,6 @@ rapids_export(INSTALL blazingsql-io
 ################################################################################################
 # - build export -------------------------------------------------------------------------------
 set(code_string [=[
-# find arrow
-if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/blazingsql-io-arrow-targets.cmake")
-  include("${CMAKE_CURRENT_LIST_DIR}/blazingsql-io-arrow-targets.cmake")
-endif()
 ]=])
 
 rapids_export(BUILD blazingsql-io

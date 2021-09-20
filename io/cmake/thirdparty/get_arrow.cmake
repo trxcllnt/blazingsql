@@ -159,13 +159,13 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
     if(Arrow_ADDED)
         rapids_export(BUILD Arrow
           VERSION ${VERSION}
-          EXPORT_SET arrow_targets
+          EXPORT_SET blazingsql-io-exports
           GLOBAL_TARGETS arrow_shared arrow_static
           NAMESPACE blazingdb::)
 
         rapids_export(BUILD ArrowCUDA
           VERSION ${VERSION}
-          EXPORT_SET arrow_cuda_targets
+          EXPORT_SET blazingsql-io-exports
           GLOBAL_TARGETS arrow_cuda_shared arrow_cuda_static
           NAMESPACE blazingdb::)
     endif()
