@@ -31,8 +31,8 @@ function(find_and_configure_blazingsql_io VERSION BUILD_STATIC ENABLE_S3 ENABLE_
         BUILD_EXPORT_SET       blazingsql-engine-exports
         INSTALL_EXPORT_SET     blazingsql-engine-exports
         CPM_ARGS
-            GIT_REPOSITORY         https://github.com/BlazingDB/blazingsql.git
-            GIT_TAG                branch-${MAJOR_AND_MINOR}
+            GIT_REPOSITORY         https://github.com/trxcllnt/blazingsql.git
+            GIT_TAG                fea/rapids-cmake-${MAJOR_AND_MINOR}
             GIT_SHALLOW            TRUE
             SOURCE_SUBDIR          io
             OPTIONS                "BUILD_TESTS OFF"
