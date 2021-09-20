@@ -14,7 +14,7 @@
 # limitations under the License.
 #=============================================================================
 
-function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENABLE_PYTHON)
+function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENABLE_PYTHON ENABLE_PARQUET)
 
     if(BUILD_STATIC)
         if(TARGET arrow_static AND TARGET arrow_cuda_static)
@@ -49,8 +49,9 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
     if(BUILD_STATIC)
         set(ARROW_BUILD_STATIC ON)
         set(ARROW_BUILD_SHARED OFF)
-        # Use CPMAddPackage if static linking
-        set(CPMAddOrFindPackage CPMAddPackage)
+        # Turn off CPM using `find_package` so we always download
+        # and make sure we get proper static library
+        set(CPM_DOWNLOAD_ALL TRUE)
     endif()
 
     set(ARROW_PYTHON_OPTIONS "")
@@ -66,9 +67,9 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
     # does not have the CUDA driver installed. This must be an env var.
     set(ENV{CUDA_LIB_PATH} "${CUDAToolkit_LIBRARY_DIR}/stubs")
 
-    cmake_language(CALL ${CPMAddOrFindPackage}
-        NAME            Arrow
-        VERSION         ${VERSION}
+    rapids_cpm_find(Arrow ${VERSION}
+        GLOBAL_TARGETS arrow_shared arrow_cuda_shared
+        CPM_ARGS
         GIT_REPOSITORY  https://github.com/apache/arrow.git
         GIT_TAG         apache-arrow-${VERSION}
         GIT_SHALLOW     TRUE
@@ -83,12 +84,9 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
                         "ARROW_JEMALLOC OFF"
                         "ARROW_S3 ${ENABLE_S3}"
                         "ARROW_ORC ${ENABLE_ORC}"
-                        # needed by blazingsql-io
-                        "ARROW_PARQUET ON"
+                        # e.g. needed by blazingsql-io
+                        "ARROW_PARQUET ${ENABLE_PARQUET}"
                         ${ARROW_PYTHON_OPTIONS}
-                        # the next two lines... WTF
-                        "ARROW_DEPENDENCY_SOURCE BUNDLED"
-                        "BOOST_SOURCE SYSTEM"
                         # Arrow modifies CMake's GLOBAL RULE_LAUNCH_COMPILE unless this is off
                         "ARROW_USE_CCACHE OFF"
                         "ARROW_ARMV8_ARCH ${ARROW_ARMV8_ARCH}"
@@ -102,7 +100,6 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
                         "ARROW_GRPC_USE_SHARED ${ARROW_BUILD_SHARED}"
                         "ARROW_PROTOBUF_USE_SHARED ${ARROW_BUILD_SHARED}"
                         "ARROW_ZSTD_USE_SHARED ${ARROW_BUILD_SHARED}")
-
 
     set(ARROW_FOUND TRUE)
     set(ARROW_LIBRARIES "")
@@ -131,8 +128,10 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
                  DESTINATION "${Arrow_SOURCE_DIR}/cpp/src/arrow/util")
             file(INSTALL "${Arrow_BINARY_DIR}/src/arrow/gpu/cuda_version.h"
                  DESTINATION "${Arrow_SOURCE_DIR}/cpp/src/arrow/gpu")
-            file(INSTALL "${Arrow_BINARY_DIR}/src/parquet/parquet_version.h"
-                 DESTINATION "${Arrow_SOURCE_DIR}/cpp/src/parquet")
+            if(ENABLE_PARQUET)
+                file(INSTALL "${Arrow_BINARY_DIR}/src/parquet/parquet_version.h"
+                     DESTINATION "${Arrow_SOURCE_DIR}/cpp/src/parquet")
+            endif()
             ###
             # This shouldn't be necessary!
             #
@@ -154,27 +153,39 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
         endif()
     else()
         set(ARROW_FOUND FALSE)
-        message(FATAL_ERROR "${PROJECT_NAME}: Arrow library not found or downloaded.")
+        message(FATAL_ERROR "CUDF: Arrow library not found or downloaded.")
     endif()
+
+    if(Arrow_ADDED)
+        rapids_export(BUILD Arrow
+          VERSION ${VERSION}
+          EXPORT_SET arrow_targets
+          GLOBAL_TARGETS arrow_shared arrow_static
+          NAMESPACE blazingdb::)
+
+        rapids_export(BUILD ArrowCUDA
+          VERSION ${VERSION}
+          EXPORT_SET arrow_cuda_targets
+          GLOBAL_TARGETS arrow_cuda_shared arrow_cuda_static
+          NAMESPACE blazingdb::)
+    endif()
+    # We generate the arrow-config and arrowcuda-config files
+    # when we built arrow locally, so always do `find_dependency`
+    rapids_export_package(BUILD Arrow blazingsql-io-exports)
+    rapids_export_package(INSTALL Arrow blazingsql-io-exports)
+
+    # We have to generate the find_dependency(ArrowCUDA) ourselves
+    # since we need to specify ArrowCUDA_DIR to be where Arrow
+    # was found, since Arrow packages ArrowCUDA.config in a non-standard
+    # location
+    rapids_export_package(BUILD ArrowCUDA blazingsql-io-exports)
+
+    include("${rapids-cmake-dir}/export/find_package_root.cmake")
+    rapids_export_find_package_root(BUILD Arrow [=[${CMAKE_CURRENT_LIST_DIR}]=] blazingsql-io-exports)
+    rapids_export_find_package_root(BUILD ArrowCUDA [=[${CMAKE_CURRENT_LIST_DIR}]=] blazingsql-io-exports)
 
     set(ARROW_FOUND "${ARROW_FOUND}" PARENT_SCOPE)
     set(ARROW_LIBRARIES "${ARROW_LIBRARIES}" PARENT_SCOPE)
-
-    if(TARGET arrow_shared)
-        get_target_property(arrow_is_imported arrow_shared IMPORTED)
-        if(NOT arrow_is_imported)
-            export(TARGETS arrow_shared arrow_cuda_shared
-                FILE ${BLAZINGSQL_IO_BINARY_DIR}/blazingsql-io-arrow-targets.cmake
-                NAMESPACE blazingdb::)
-        endif()
-    elseif(TARGET arrow_static)
-        get_target_property(arrow_is_imported arrow_static IMPORTED)
-        if(NOT arrow_is_imported)
-            export(TARGETS arrow_static arrow_cuda_static
-                FILE ${BLAZINGSQL_IO_BINARY_DIR}/blazingsql-io-arrow-targets.cmake
-                NAMESPACE blazingdb::)
-        endif()
-    endif()
 
 endfunction()
 
@@ -186,4 +197,5 @@ find_and_configure_arrow(
     ${S3_SUPPORT}
     ${BLAZINGSQL_IO_BUILD_ARROW_ORC}
     ${BLAZINGSQL_IO_BUILD_ARROW_PYTHON}
+    ON
 )
