@@ -29,7 +29,10 @@ import pyarrow as pa
 import cudf
 
 from cudf._lib cimport *
-from cudf._lib.types import np_to_cudf_types, cudf_to_np_types
+from cudf._lib.types import (
+    SUPPORTED_NUMPY_TO_LIBCUDF_TYPES as np_to_cudf_types,
+    LIBCUDF_TO_SUPPORTED_NUMPY_TYPES as cudf_to_np_types
+)
 from cudf._lib.cpp.types cimport type_id
 from cudf._lib.types cimport underlying_type_t_type_id
 from cudf._lib.cpp.io.types cimport compression_type
@@ -311,7 +314,7 @@ cdef class PyBlazingCache:
         for i in range(deref(table).names().size()):
             decoded_names.append(deref(table).names()[i].decode('utf-8'))
 
-        df = cudf.DataFrame._from_data(data_from_unique_ptr(
+        df = cudf.DataFrame._from_data(*data_from_unique_ptr(
             blaz_move(deref(table).releaseCudfTable()),
             column_names=decoded_names
         ))
@@ -437,7 +440,7 @@ cpdef parseMetadataCaller(fileList, offset, schema, file_format_hint, args):
     for i in range(names.size()): # Increment the iterator to the net element
         decoded_names.append(names[i].decode('utf-8'))
 
-    df = cudf.DataFrame._from_data(data_from_unique_ptr(
+    df = cudf.DataFrame._from_data(*data_from_unique_ptr(
         blaz_move(dereference(resultSet).cudfTable),
         column_names=decoded_names
     ))
@@ -618,14 +621,14 @@ cpdef getExecuteGraphResultCaller(PyBlazingGraph graph, int ctx_token, bool is_s
         decoded_names.append(names[i].decode('utf-8'))
 
     if is_single_node: # the engine returns a concatenated dataframe
-        return cudf.DataFrame._from_data(data_from_unique_ptr(
+        return cudf.DataFrame._from_data(*data_from_unique_ptr(
             blaz_move(dereference(resultSet).cudfTables[0]),
             column_names=decoded_names
         ))
     else: # the engine returns a vector of dataframes
         dfs = []
         for i in range(dereference(resultSet).cudfTables.size()):
-            dfs.append(cudf.DataFrame._from_data(data_from_unique_ptr(
+            dfs.append(cudf.DataFrame._from_data(*data_from_unique_ptr(
                 blaz_move(dereference(resultSet).cudfTables[i]),
                 column_names=decoded_names
             )))
@@ -665,7 +668,7 @@ cpdef runSkipDataCaller(table, queryPy):
         for i in range(names.size()):
             decoded_names.append(names[i].decode('utf-8'))
 
-        df = cudf.DataFrame._from_data(data_from_unique_ptr(
+        df = cudf.DataFrame._from_data(*data_from_unique_ptr(
             blaz_move(dereference(resultSet).cudfTable),
             column_names=decoded_names
         ))
