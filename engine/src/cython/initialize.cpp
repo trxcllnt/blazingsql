@@ -324,9 +324,9 @@ std::pair<std::pair<std::shared_ptr<CacheMachine>,std::shared_ptr<CacheMachine> 
 	if (exec_it != config_options.end()){
 		executor_threads = std::stoi(config_options["EXECUTOR_THREADS"]);
 	}
-	
+
 	std::string flush_level = "warn";
-	
+
 	auto log_it = config_options.find("LOGGING_FLUSH_LEVEL");
 	if (log_it != config_options.end()){
 		flush_level = config_options["LOGGING_FLUSH_LEVEL"];
@@ -421,7 +421,7 @@ std::pair<std::pair<std::shared_ptr<CacheMachine>,std::shared_ptr<CacheMachine> 
             create_logger(tasksFileName, "task_logger", ralId, flush_level, logger_level_wanted, max_size_logging);
             printLoggerHeader(tasksFileName, "task_logger");
         }
-	} 
+	}
 
 	std::shared_ptr<spdlog::logger> logger = spdlog::get("batch_logger");
 	if (logging_directory_missing){
@@ -486,28 +486,28 @@ std::pair<std::pair<std::shared_ptr<CacheMachine>,std::shared_ptr<CacheMachine> 
 			ral::communication::UcpWorkerAddress ucpWorkerAddress = ral::communication::GetUcpWorkerAddress(self_worker);
 
 			std::map<std::string, ral::communication::UcpWorkerAddress> peer_addresses_map;
-			auto th = std::thread([ralCommunicationPort, total_peers=workers_ucp_info.size(), &peer_addresses_map, worker_id, workers_ucp_info](){
-				ral::communication::AddressExchangerForSender exchanger(ralCommunicationPort);
+			ral::communication::AddressExchangerForSender server(ralCommunicationPort);
+			auto th = std::thread([total_peers=workers_ucp_info.size(), &server, &peer_addresses_map, worker_id, workers_ucp_info](){
 				for (size_t i = 0; i < total_peers; i++){
 					if(workers_ucp_info[i].worker_id == worker_id){
 						continue;
 					}
-					if (exchanger.acceptConnection()){
-						int ret;
+					if (server.acceptConnection()){
+						ssize_t ret{};
 
 						// Receive worker_id size
-						size_t worker_id_buff_size;
-						ret = recv(exchanger.fd(), &worker_id_buff_size, sizeof(size_t), MSG_WAITALL);
+						size_t worker_id_buff_size{};
+						ret = recv(server.fd(), &worker_id_buff_size, sizeof(size_t), MSG_WAITALL);
 						ral::communication::CheckError(static_cast<size_t>(ret) != sizeof(size_t), "recv worker_id_buff_size");
 
 						// Receive worker_id
 						std::string worker_id(worker_id_buff_size, '\0');
-						ret = recv(exchanger.fd(), &worker_id[0], worker_id.size(), MSG_WAITALL);
+						ret = recv(server.fd(), &worker_id[0], worker_id.size(), MSG_WAITALL);
 						ral::communication::CheckError(static_cast<size_t>(ret) != worker_id.size(), "recv worker_id");
 
 						// Receive ucp_worker_address size
-						size_t ucp_worker_address_size;
-						ret = recv(exchanger.fd(), &ucp_worker_address_size, sizeof(size_t), MSG_WAITALL);
+						size_t ucp_worker_address_size{};
+						ret = recv(server.fd(), &ucp_worker_address_size, sizeof(size_t), MSG_WAITALL);
 						ral::communication::CheckError(static_cast<size_t>(ret) != sizeof(size_t), "recv ucp_worker_address_size");
 
 						// Receive ucp_worker_address
@@ -516,39 +516,40 @@ std::pair<std::pair<std::shared_ptr<CacheMachine>,std::shared_ptr<CacheMachine> 
 								reinterpret_cast<ucp_address_t *>(data),
 								ucp_worker_address_size};
 
-						ret = recv(exchanger.fd(), peerUcpWorkerAddress.address, ucp_worker_address_size, MSG_WAITALL);
+						ret = recv(server.fd(), peerUcpWorkerAddress.address, ucp_worker_address_size, MSG_WAITALL);
 						ral::communication::CheckError(static_cast<size_t>(ret) != ucp_worker_address_size, "recv ucp_worker_address");
 
 						peer_addresses_map.emplace(worker_id, peerUcpWorkerAddress);
 
-						exchanger.closeCurrentConnection();
+						server.closeCurrentConnection();
 					}
 				}
 			});
 
-			std::this_thread::sleep_for(std::chrono::seconds(1));
+			// std::this_thread::sleep_for(std::chrono::seconds(1));
+
 			for (auto &&worker_info : workers_ucp_info){
 				if(worker_info.worker_id == worker_id){
 					continue;
 				}
-				ral::communication::AddressExchangerForReceiver exchanger(worker_info.port, worker_info.ip.c_str());
-				int ret;
+				ral::communication::AddressExchangerForReceiver destination(worker_info.port, worker_info.ip.c_str());
+				ssize_t ret{};
 
 				// Send worker_id size
 				size_t worker_id_buff_size = worker_id.size();
-				ret = send(exchanger.fd(), &worker_id_buff_size, sizeof(size_t), 0);
+				ret = send(destination.fd(), &worker_id_buff_size, sizeof(size_t), 0);
 				ral::communication::CheckError(static_cast<size_t>(ret) != sizeof(size_t), "send worker_id_buff_size");
 
 				// Send worker_id
-				ret = send(exchanger.fd(), worker_id.data(), worker_id.size(), 0);
+				ret = send(destination.fd(), worker_id.data(), worker_id.size(), 0);
 				ral::communication::CheckError(static_cast<size_t>(ret) != worker_id.size(), "send worker_id");
 
 				// Send ucp_worker_address size
-				ret = send(exchanger.fd(), &ucpWorkerAddress.length, sizeof(size_t), 0);
+				ret = send(destination.fd(), &ucpWorkerAddress.length, sizeof(size_t), 0);
 				ral::communication::CheckError(static_cast<size_t>(ret) != sizeof(size_t), "send ucp_worker_address_size");
 
 				// Send ucp_worker_address
-				ret = send(exchanger.fd(), ucpWorkerAddress.address, ucpWorkerAddress.length, 0);
+				ret = send(destination.fd(), ucpWorkerAddress.address, ucpWorkerAddress.length, 0);
 				ral::communication::CheckError(static_cast<size_t>(ret) != ucpWorkerAddress.length, "send ucp_worker_address");
 			}
 
@@ -616,7 +617,7 @@ std::pair<std::pair<std::shared_ptr<CacheMachine>,std::shared_ptr<CacheMachine> 
 	ral::execution::executor::init_executor(executor_threads, processing_memory_limit_threshold);
 	initialized = true;
   blazing_context_ref_counter::getInstance().increase();
-	return std::make_pair(output_input_caches, ralCommunicationPort);	
+	return std::make_pair(output_input_caches, ralCommunicationPort);
 }
 
 void clear_graphs(std::vector<int32_t> ctx_tokens) {
@@ -626,10 +627,10 @@ void clear_graphs(std::vector<int32_t> ctx_tokens) {
     if (graph != nullptr) {
       //printf("\tnot null\n");
       try {
-        // TODO percy felipe william rommel threads/futures in c++ cannot be cancel by 
-        // itself we need to program that logic: We should implement some sort 
-        // of interruption logic for the kernel threads/futures and then clean 
-        // its memory. For now we are using getExecuteGraphResult for the 
+        // TODO percy felipe william rommel threads/futures in c++ cannot be cancel by
+        // itself we need to program that logic: We should implement some sort
+        // of interruption logic for the kernel threads/futures and then clean
+        // its memory. For now we are using getExecuteGraphResult for the
         // finalize caller and this will ensure to free all the memory.
         // Related with -> https://github.com/BlazingDB/blazingsql/issues/1363
         auto freeThis = getExecuteGraphResult(graph, ctx_token);
@@ -648,8 +649,8 @@ void finalize(std::vector<int32_t> ctx_tokens) {
     BlazingContext::getInstance()->shutDownExternalSystems();
 
     // TODO BlazingRMMFinalize and cudaDeviceReset percy william felipe rommel
-    // if we want to finalize all the engine properly we need to implement 
-    // first many parts: thread interruptions, free memory from incomplete 
+    // if we want to finalize all the engine properly we need to implement
+    // first many parts: thread interruptions, free memory from incomplete
     // threads, notify every ral node to shutdown the processing, etc.
     // More details here -> https://github.com/BlazingDB/blazingsql/issues/1363
 
