@@ -238,22 +238,22 @@ target_compile_definitions(blazingsql-io
                    "$<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:CUDA>:${BLAZINGSQL_IO_CUDA_DEFINITIONS}>>"
 )
 
-target_link_libraries(blazingsql-io PRIVATE
-    ${CURL_LIBRARIES}
-    ${GCS_LIBRARY}
-    ${S3_LIBRARY}
-    ${ARROW_LIBRARIES}
-    absl::time
-    absl::str_format_internal
-    absl::strings
-    absl::strings_internal
-    absl::time_zone
-    absl::base
-    absl::int128
-    absl::raw_logging_internal
-    absl::spinlock_wait
-    absl::bad_variant_access
-    absl::civil_time
+target_link_libraries(blazingsql-io
+     PUBLIC ${ARROW_LIBRARIES}
+    PRIVATE ${CURL_LIBRARIES}
+            ${GCS_LIBRARY}
+            ${S3_LIBRARY}
+            absl::time
+            absl::str_format_internal
+            absl::strings
+            absl::strings_internal
+            absl::time_zone
+            absl::base
+            absl::int128
+            absl::raw_logging_internal
+            absl::spinlock_wait
+            absl::bad_variant_access
+            absl::civil_time
 )
 
 # target_include_directories(blazingsql-io
