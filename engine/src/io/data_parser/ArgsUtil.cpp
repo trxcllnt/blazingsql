@@ -8,17 +8,37 @@
 namespace ral {
 namespace io {
 
-DataType inferDataType(std::string const& file_format_hint) {
-	if(file_format_hint == "parquet") { return DataType::PARQUET; }
-	if(file_format_hint == "json") { return DataType::JSON; }
-	if(file_format_hint == "orc") { return DataType::ORC; }
-	if(file_format_hint == "csv") { return DataType::CSV; }
-	if(file_format_hint == "psv") { return DataType::CSV; }
-	if(file_format_hint == "tbl") { return DataType::CSV; }
-	if(file_format_hint == "txt") { return DataType::CSV; }
-	if(file_format_hint == "mysql") { return DataType::MYSQL; }
-	if(file_format_hint == "postgresql") { return DataType::POSTGRESQL; }
-	if(file_format_hint == "sqlite") { return DataType::SQLITE; }
+DataType inferDataType(std::string const & file_format_hint) {
+	if(file_format_hint == "parquet") {
+		return DataType::PARQUET;
+	}
+	if(file_format_hint == "json") {
+		return DataType::JSON;
+	}
+	if(file_format_hint == "orc") {
+		return DataType::ORC;
+	}
+	if(file_format_hint == "csv") {
+		return DataType::CSV;
+	}
+	if(file_format_hint == "psv") {
+		return DataType::CSV;
+	}
+	if(file_format_hint == "tbl") {
+		return DataType::CSV;
+	}
+	if(file_format_hint == "txt") {
+		return DataType::CSV;
+	}
+	if(file_format_hint == "mysql") {
+		return DataType::MYSQL;
+	}
+	if(file_format_hint == "postgresql") {
+		return DataType::POSTGRESQL;
+	}
+	if(file_format_hint == "sqlite") {
+		return DataType::SQLITE;
+	}
 	// NOTE if you need more options the user can pass file_format in the create table
 
 	return DataType::UNDEFINED;
@@ -27,13 +47,13 @@ DataType inferDataType(std::string const& file_format_hint) {
 DataType inferFileType(std::vector<std::string> files, DataType data_type_hint, bool ignore_missing_paths) {
 	if(data_type_hint == DataType::PARQUET || data_type_hint == DataType::CSV || data_type_hint == DataType::JSON ||
 		data_type_hint == DataType::ORC || data_type_hint == DataType::MYSQL ||
-    data_type_hint == DataType::POSTGRESQL || data_type_hint == DataType::SQLITE) {
+		data_type_hint == DataType::POSTGRESQL || data_type_hint == DataType::SQLITE) {
 		return data_type_hint;
 	}
 
 	std::vector<Uri> uris;
 	std::transform(
-		files.begin(), files.end(), std::back_inserter(uris), [](std::string const& uri) -> Uri { return {uri}; });
+		files.begin(), files.end(), std::back_inserter(uris), [](std::string const & uri) -> Uri { return {uri}; });
 	ral::io::uri_data_provider udp(uris, ignore_missing_paths);
 	bool open_file = false;
 	const ral::io::data_handle dh = udp.get_next(open_file);
@@ -55,7 +75,7 @@ bool to_bool(std::string value) {
 
 char ord(std::string value) { return static_cast<char>(value[0]); }
 
-int to_int(std::string const& value) { return std::atoi(value.c_str()); }
+int to_int(std::string const & value) { return std::atoi(value.c_str()); }
 
 std::vector<std::string> to_vector_string(std::string value) {
 	std::string vec = StringUtil::replace(value, "'", "");
@@ -69,81 +89,123 @@ std::vector<std::string> to_vector_string(std::string value) {
 std::vector<int> to_vector_int(std::string value) {
 	std::vector<std::string> input = to_vector_string(value);
 	std::vector<int> ret;
-	std::transform(input.begin(), input.end(), std::back_inserter(ret), [](std::string const& v) -> int { return to_int(v); });
+	std::transform(
+		input.begin(), input.end(), std::back_inserter(ret), [](std::string const & v) -> int { return to_int(v); });
 	return ret;
 }
 
-cudf::data_type convert_string_to_dtype(const std::string& dtype_in)
-{
-  // TODO: This function should be cleanup to take only libcudf type instances.
-  std::string dtype = dtype_in;
-  // first, convert to all lower-case
-  std::transform(dtype_in.begin(), dtype_in.end(), dtype.begin(), [](unsigned char ch) {
-    return static_cast<char>(std::tolower(ch));
-  });
-  if (dtype == "str") { return cudf::data_type(cudf::type_id::STRING); }
-  if (dtype == "timestamp[s]" || dtype == "datetime64[s]") { return cudf::data_type(cudf::type_id::TIMESTAMP_SECONDS); }
-  // backwards compat: "timestamp" defaults to milliseconds
-  if (dtype == "timestamp[ms]" || dtype == "timestamp" || dtype == "datetime64[ms]") { return cudf::data_type(cudf::type_id::TIMESTAMP_MILLISECONDS); }
-  if (dtype == "timestamp[us]" || dtype == "datetime64[us]") { return cudf::data_type(cudf::type_id::TIMESTAMP_MICROSECONDS); }
-  if (dtype == "timestamp[ns]" || dtype == "datetime64[ns]") { return cudf::data_type(cudf::type_id::TIMESTAMP_NANOSECONDS); }
-  if (dtype == "date32") { return cudf::data_type(cudf::type_id::TIMESTAMP_DAYS); }
-  if (dtype == "bool" || dtype == "boolean") { return cudf::data_type(cudf::type_id::BOOL8); }
-  if (dtype == "date" || dtype == "date64") { return cudf::data_type(cudf::type_id::TIMESTAMP_MILLISECONDS); }
-  if (dtype == "timedelta[d]") { return cudf::data_type(cudf::type_id::DURATION_DAYS); }
-  if (dtype == "timedelta64[s]") { return cudf::data_type(cudf::type_id::DURATION_SECONDS); }
-  if (dtype == "timedelta64[ms]") { return cudf::data_type(cudf::type_id::DURATION_MILLISECONDS); }
-  if (dtype == "timedelta64[us]") { return cudf::data_type(cudf::type_id::DURATION_MICROSECONDS); }
-  if (dtype == "timedelta" || dtype == "timedelta64[ns]") { return cudf::data_type(cudf::type_id::DURATION_NANOSECONDS); }
-  if (dtype == "float" || dtype == "float32") { return cudf::data_type(cudf::type_id::FLOAT32); }
-  if (dtype == "double" || dtype == "float64") { return cudf::data_type(cudf::type_id::FLOAT64); }
-  if (dtype == "byte" || dtype == "int8") { return cudf::data_type(cudf::type_id::INT8); }
-  if (dtype == "short" || dtype == "int16") { return cudf::data_type(cudf::type_id::INT16); }
-  if (dtype == "int" || dtype == "int32") { return cudf::data_type(cudf::type_id::INT32); }
-  if (dtype == "long" || dtype == "int64") { return cudf::data_type(cudf::type_id::INT64); }
-  if (dtype == "uint8") { return cudf::data_type(cudf::type_id::UINT8); }
-  if (dtype == "uint16") { return cudf::data_type(cudf::type_id::UINT16); }
-  if (dtype == "uint32") { return cudf::data_type(cudf::type_id::UINT32); }
-  if (dtype == "uint64") { return cudf::data_type(cudf::type_id::UINT64); }
+cudf::data_type convert_string_to_dtype(const std::string & dtype_in) {
+	// TODO: This function should be cleanup to take only libcudf type instances.
+	std::string dtype = dtype_in;
+	// first, convert to all lower-case
+	std::transform(dtype_in.begin(), dtype_in.end(), dtype.begin(), [](unsigned char ch) {
+		return static_cast<char>(std::tolower(ch));
+	});
+	if(dtype == "str") {
+		return cudf::data_type(cudf::type_id::STRING);
+	}
+	if(dtype == "timestamp[s]" || dtype == "datetime64[s]") {
+		return cudf::data_type(cudf::type_id::TIMESTAMP_SECONDS);
+	}
+	// backwards compat: "timestamp" defaults to milliseconds
+	if(dtype == "timestamp[ms]" || dtype == "timestamp" || dtype == "datetime64[ms]") {
+		return cudf::data_type(cudf::type_id::TIMESTAMP_MILLISECONDS);
+	}
+	if(dtype == "timestamp[us]" || dtype == "datetime64[us]") {
+		return cudf::data_type(cudf::type_id::TIMESTAMP_MICROSECONDS);
+	}
+	if(dtype == "timestamp[ns]" || dtype == "datetime64[ns]") {
+		return cudf::data_type(cudf::type_id::TIMESTAMP_NANOSECONDS);
+	}
+	if(dtype == "date32") {
+		return cudf::data_type(cudf::type_id::TIMESTAMP_DAYS);
+	}
+	if(dtype == "bool" || dtype == "boolean") {
+		return cudf::data_type(cudf::type_id::BOOL8);
+	}
+	if(dtype == "date" || dtype == "date64") {
+		return cudf::data_type(cudf::type_id::TIMESTAMP_MILLISECONDS);
+	}
+	if(dtype == "timedelta[d]") {
+		return cudf::data_type(cudf::type_id::DURATION_DAYS);
+	}
+	if(dtype == "timedelta64[s]") {
+		return cudf::data_type(cudf::type_id::DURATION_SECONDS);
+	}
+	if(dtype == "timedelta64[ms]") {
+		return cudf::data_type(cudf::type_id::DURATION_MILLISECONDS);
+	}
+	if(dtype == "timedelta64[us]") {
+		return cudf::data_type(cudf::type_id::DURATION_MICROSECONDS);
+	}
+	if(dtype == "timedelta" || dtype == "timedelta64[ns]") {
+		return cudf::data_type(cudf::type_id::DURATION_NANOSECONDS);
+	}
+	if(dtype == "float" || dtype == "float32") {
+		return cudf::data_type(cudf::type_id::FLOAT32);
+	}
+	if(dtype == "double" || dtype == "float64") {
+		return cudf::data_type(cudf::type_id::FLOAT64);
+	}
+	if(dtype == "byte" || dtype == "int8") {
+		return cudf::data_type(cudf::type_id::INT8);
+	}
+	if(dtype == "short" || dtype == "int16") {
+		return cudf::data_type(cudf::type_id::INT16);
+	}
+	if(dtype == "int" || dtype == "int32") {
+		return cudf::data_type(cudf::type_id::INT32);
+	}
+	if(dtype == "long" || dtype == "int64") {
+		return cudf::data_type(cudf::type_id::INT64);
+	}
+	if(dtype == "uint8") {
+		return cudf::data_type(cudf::type_id::UINT8);
+	}
+	if(dtype == "uint16") {
+		return cudf::data_type(cudf::type_id::UINT16);
+	}
+	if(dtype == "uint32") {
+		return cudf::data_type(cudf::type_id::UINT32);
+	}
+	if(dtype == "uint64") {
+		return cudf::data_type(cudf::type_id::UINT64);
+	}
 
-  return cudf::data_type(cudf::type_id::EMPTY);
+	return cudf::data_type(cudf::type_id::EMPTY);
 }
 
-std::vector<cudf::data_type> parse_data_types(
-  std::vector<std::string> const& types_as_strings)
-{
-  std::vector<cudf::data_type> dtypes;
-  // Assume that the dtype is in dictionary format only if all elements contain a colon
-  const bool is_dict = std::all_of(
-    std::cbegin(types_as_strings), std::cend(types_as_strings), [](const std::string& s) {
-      return std::find(std::cbegin(s), std::cend(s), ':') != std::cend(s);
-    });
+std::vector<cudf::data_type> parse_data_types(std::vector<std::string> const & types_as_strings) {
+	std::vector<cudf::data_type> dtypes;
+	// Assume that the dtype is in dictionary format only if all elements contain a colon
+	const bool is_dict = std::all_of(std::cbegin(types_as_strings),
+		std::cend(types_as_strings),
+		[](const std::string & s) { return std::find(std::cbegin(s), std::cend(s), ':') != std::cend(s); });
 
-  auto split_on_colon = [](std::string_view s) {
-    auto const i = s.find(":");
-    return std::pair{s.substr(0, i), s.substr(i + 1)};
-  };
+	auto split_on_colon = [](std::string_view s) {
+		auto const i = s.find(":");
+		return std::pair{s.substr(0, i), s.substr(i + 1)};
+	};
 
-  if (is_dict) {
-    std::map<std::string, cudf::data_type> col_type_map;
-    std::transform(
-      std::cbegin(types_as_strings),
-      std::cend(types_as_strings),
-      std::back_inserter(dtypes),
-      [&](auto const& ts) {
-        auto const [col_name, type_str] = split_on_colon(ts);
-        return convert_string_to_dtype(std::string{type_str});
-      });
-  } else {
-    std::transform(std::cbegin(types_as_strings),
-                   std::cend(types_as_strings),
-                   std::back_inserter(dtypes),
-                   [](auto const& col_dtype) { return convert_string_to_dtype(col_dtype); });
-  }
-  return dtypes;
+	if(is_dict) {
+		std::map<std::string, cudf::data_type> col_type_map;
+		std::transform(std::cbegin(types_as_strings),
+			std::cend(types_as_strings),
+			std::back_inserter(dtypes),
+			[&](auto const & ts) {
+				auto const [col_name, type_str] = split_on_colon(ts);
+				return convert_string_to_dtype(std::string{type_str});
+			});
+	} else {
+		std::transform(std::cbegin(types_as_strings),
+			std::cend(types_as_strings),
+			std::back_inserter(dtypes),
+			[](auto const & col_dtype) { return convert_string_to_dtype(col_dtype); });
+	}
+	return dtypes;
 }
-cudf::io::json_reader_options getJsonReaderOptions(const std::map<std::string, std::string> & args, cudf::io::arrow_io_source & arrow_source) {
-
+cudf::io::json_reader_options getJsonReaderOptions(
+	const std::map<std::string, std::string> & args, cudf::io::arrow_io_source & arrow_source) {
 	auto reader_opts = cudf::io::json_reader_options::builder(cudf::io::source_info{&arrow_source});
 	reader_opts.lines(true);
 	if(map_contains("dtype", args)) {
@@ -167,9 +229,10 @@ cudf::io::json_reader_options getJsonReaderOptions(const std::map<std::string, s
 	return std::move(reader_opts.build());
 }
 
-cudf::io::orc_reader_options getOrcReaderOptions(const std::map<std::string, std::string> & args, cudf::io::arrow_io_source & arrow_source) {
-
-	cudf::io::orc_reader_options reader_opts = cudf::io::orc_reader_options::builder(cudf::io::source_info{&arrow_source});
+cudf::io::orc_reader_options getOrcReaderOptions(
+	const std::map<std::string, std::string> & args, cudf::io::arrow_io_source & arrow_source) {
+	cudf::io::orc_reader_options reader_opts =
+		cudf::io::orc_reader_options::builder(cudf::io::source_info{&arrow_source});
 	if(map_contains("stripes", args)) {
 		reader_opts.set_stripes({to_vector_int(args.at("stripes"))});
 	}
@@ -187,9 +250,9 @@ cudf::io::orc_reader_options getOrcReaderOptions(const std::map<std::string, std
 	return reader_opts;
 }
 
-cudf::io::csv_reader_options getCsvReaderOptions(const std::map<std::string, std::string> & args, cudf::io::arrow_io_source & arrow_source) {
-
-	cudf::io::csv_reader_options reader_opts = cudf::io::csv_reader_options::builder(cudf::io::source_info{&arrow_source});
+cudf::io::csv_reader_options getCsvReaderOptions(
+	const std::map<std::string, std::string> & args, cudf::io::source_info const & source) {
+	cudf::io::csv_reader_options reader_opts = cudf::io::csv_reader_options::builder(source);
 	if(map_contains("compression", args)) {
 		reader_opts.set_compression(static_cast<cudf::io::compression_type>(to_int(args.at("compression"))));
 	}
@@ -317,43 +380,43 @@ std::string getDataTypeName(DataType dataType) {
 	return "undefined";
 }
 
-sql_info getSqlInfo(std::map<std::string, std::string> &args_map) {
-  // TODO percy william maybe we can move this constant as a bc.BlazingContext config opt
-  const size_t DETAULT_TABLE_BATCH_SIZE = 100000;
-  // TODO(percy, cristhian): add exception for key error and const
-  // TODO(percy, cristhian): for sqlite, add contionals to avoid unncessary fields
-  sql_info sql;
-  if (args_map.find("hostname") != args_map.end()) {
-    sql.host = args_map.at("hostname");
-  }
-  if (args_map.find("port") != args_map.end()) {
-    sql.port = static_cast<std::size_t>(std::atoll(args_map["port"].data()));
-  }
-  if (args_map.find("username") != args_map.end()) {
-    sql.user = args_map.at("username");
-  }
-  if (args_map.find("password") != args_map.end()) {
-    sql.password = args_map.at("password");
-  }
-  if (args_map.find("database") != args_map.end()) {
-    sql.schema = args_map.at("database");
-  }
-  if (args_map.find("table") != args_map.end()) {
-    sql.table = args_map.at("table");
-  }
-  if (args_map.find("table_filter") != args_map.end()) {
-    sql.table_filter = args_map.at("table_filter");
-  }
-  if (args_map.find("table_batch_size") != args_map.end()) {
-    if (args_map.at("table_batch_size").empty()) {
-      sql.table_batch_size = DETAULT_TABLE_BATCH_SIZE;
-    } else {
-      sql.table_batch_size = static_cast<std::size_t>(std::atoll(args_map.at("table_batch_size").data()));
-    }
-  } else {
-    sql.table_batch_size = DETAULT_TABLE_BATCH_SIZE;
-  }
-  return sql;
+sql_info getSqlInfo(std::map<std::string, std::string> & args_map) {
+	// TODO percy william maybe we can move this constant as a bc.BlazingContext config opt
+	const size_t DETAULT_TABLE_BATCH_SIZE = 100000;
+	// TODO(percy, cristhian): add exception for key error and const
+	// TODO(percy, cristhian): for sqlite, add contionals to avoid unncessary fields
+	sql_info sql;
+	if(args_map.find("hostname") != args_map.end()) {
+		sql.host = args_map.at("hostname");
+	}
+	if(args_map.find("port") != args_map.end()) {
+		sql.port = static_cast<std::size_t>(std::atoll(args_map["port"].data()));
+	}
+	if(args_map.find("username") != args_map.end()) {
+		sql.user = args_map.at("username");
+	}
+	if(args_map.find("password") != args_map.end()) {
+		sql.password = args_map.at("password");
+	}
+	if(args_map.find("database") != args_map.end()) {
+		sql.schema = args_map.at("database");
+	}
+	if(args_map.find("table") != args_map.end()) {
+		sql.table = args_map.at("table");
+	}
+	if(args_map.find("table_filter") != args_map.end()) {
+		sql.table_filter = args_map.at("table_filter");
+	}
+	if(args_map.find("table_batch_size") != args_map.end()) {
+		if(args_map.at("table_batch_size").empty()) {
+			sql.table_batch_size = DETAULT_TABLE_BATCH_SIZE;
+		} else {
+			sql.table_batch_size = static_cast<std::size_t>(std::atoll(args_map.at("table_batch_size").data()));
+		}
+	} else {
+		sql.table_batch_size = DETAULT_TABLE_BATCH_SIZE;
+	}
+	return sql;
 }
 
 } /* namespace io */
