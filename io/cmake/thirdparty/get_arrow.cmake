@@ -56,13 +56,17 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
         set(CPM_DOWNLOAD_ALL TRUE)
     endif()
 
-    set(ARROW_PYTHON_OPTIONS "")
+    set(EXTRA_ARROW_OPTIONS "")
+
     if(ENABLE_PYTHON)
-        list(APPEND ARROW_PYTHON_OPTIONS "ARROW_PYTHON ON")
+        list(APPEND EXTRA_ARROW_OPTIONS "ARROW_PYTHON ON")
+    endif()
+
+    if(ENABLE_PYTHON OR ENABLE_PARQUET)
         # Arrow's logic to build Boost from source is busted, so we have to get it from the system.
-        list(APPEND ARROW_PYTHON_OPTIONS "BOOST_SOURCE SYSTEM")
-        list(APPEND ARROW_PYTHON_OPTIONS "Thrift_SOURCE BUNDLED")
-        list(APPEND ARROW_PYTHON_OPTIONS "ARROW_DEPENDENCY_SOURCE AUTO")
+        list(APPEND EXTRA_ARROW_OPTIONS "BOOST_SOURCE SYSTEM")
+        list(APPEND EXTRA_ARROW_OPTIONS "Thrift_SOURCE BUNDLED")
+        list(APPEND EXTRA_ARROW_OPTIONS "ARROW_DEPENDENCY_SOURCE AUTO")
     endif()
 
     # Set this so Arrow correctly finds the CUDA toolkit when the build machine
@@ -91,7 +95,7 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
                         "ARROW_ORC ${ENABLE_ORC}"
                         # e.g. needed by blazingsql-io
                         "ARROW_PARQUET ${ENABLE_PARQUET}"
-                        ${ARROW_PYTHON_OPTIONS}
+                        ${EXTRA_ARROW_OPTIONS}
                         # Arrow modifies CMake's GLOBAL RULE_LAUNCH_COMPILE unless this is off
                         "ARROW_USE_CCACHE OFF"
                         "ARROW_ARMV8_ARCH ${ARROW_ARMV8_ARCH}"
@@ -127,13 +131,15 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
             set(ArrowCUDA_DIR "${Arrow_DIR}")
             find_package(Arrow REQUIRED QUIET)
             find_package(ArrowCUDA REQUIRED QUIET)
-            if(ENABLE_PARQUET AND NOT Parquet_DIR)
-                # Set this to enable `find_package(Parquet)`
-                set(Parquet_DIR "${Arrow_DIR}")
+            if(ENABLE_PARQUET)
+                if (NOT Parquet_DIR)
+                    # Set this to enable `find_package(Parquet)`
+                    set(Parquet_DIR "${Arrow_DIR}")
+                endif()
+                # Set this to enable `find_package(ArrowDataset)`
+                set(ArrowDataset_DIR "${Arrow_DIR}")
+                find_package(ArrowDataset REQUIRED QUIET)
             endif()
-            # Set this to enable `find_package(ArrowDataset)`
-            set(ArrowDataset_DIR "${Arrow_DIR}")
-            find_package(ArrowDataset REQUIRED QUIET)
         elseif(Arrow_ADDED)
             # Copy these files so we can avoid adding paths in
             # Arrow_BINARY_DIR to target_include_directories.
@@ -167,7 +173,7 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
         endif()
     else()
         set(ARROW_FOUND FALSE)
-        message(FATAL_ERROR "CUDF: Arrow library not found or downloaded.")
+        message(FATAL_ERROR "BLAZINGSQL_IO: Arrow library not found or downloaded.")
     endif()
 
     if(Arrow_ADDED)
@@ -204,24 +210,24 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
           NAMESPACE blazingdb::
           FINAL_CODE_BLOCK arrow_cuda_code_string)
 
+          if(ENABLE_PARQUET)
 
-        set(arrow_dataset_code_string [=[
-          if (TARGET blazingdb::arrow_dataset_shared AND (NOT TARGET arrow_dataset_shared))
-              add_library(arrow_dataset_shared ALIAS blazingdb::arrow_dataset_shared)
-          endif()
-          if (TARGET blazingdb::arrow_dataset_static AND (NOT TARGET arrow_dataset_static))
-              add_library(arrow_dataset_static ALIAS blazingdb::arrow_dataset_static)
-          endif()
-        ]=])
+            set(arrow_dataset_code_string [=[
+              if (TARGET blazingdb::arrow_dataset_shared AND (NOT TARGET arrow_dataset_shared))
+                  add_library(arrow_dataset_shared ALIAS blazingdb::arrow_dataset_shared)
+              endif()
+              if (TARGET blazingdb::arrow_dataset_static AND (NOT TARGET arrow_dataset_static))
+                  add_library(arrow_dataset_static ALIAS blazingdb::arrow_dataset_static)
+              endif()
+            ]=])
 
-        rapids_export(BUILD ArrowDataset
-          VERSION ${VERSION}
-          EXPORT_SET arrow_dataset_targets
-          GLOBAL_TARGETS arrow_dataset_shared arrow_dataset_static
-          NAMESPACE blazingdb::
-          FINAL_CODE_BLOCK arrow_dataset_code_string)
+            rapids_export(BUILD ArrowDataset
+              VERSION ${VERSION}
+              EXPORT_SET arrow_dataset_targets
+              GLOBAL_TARGETS arrow_dataset_shared arrow_dataset_static
+              NAMESPACE blazingdb::
+              FINAL_CODE_BLOCK arrow_dataset_code_string)
 
-        if(ENABLE_PARQUET)
             set(parquet_code_string [=[
               if (TARGET blazingdb::parquet_shared AND (NOT TARGET parquet_shared))
                   add_library(parquet_shared ALIAS blazingdb::parquet_shared)
@@ -252,16 +258,16 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
     rapids_export_package(BUILD ArrowCUDA blazingsql-io-exports)
     if(ENABLE_PARQUET)
         rapids_export_package(BUILD Parquet blazingsql-io-exports)
+        rapids_export_package(BUILD ArrowDataset blazingsql-io-exports)
     endif()
-    rapids_export_package(BUILD ArrowDataset blazingsql-io-exports)
 
     include("${rapids-cmake-dir}/export/find_package_root.cmake")
     rapids_export_find_package_root(BUILD Arrow [=[${CMAKE_CURRENT_LIST_DIR}]=] blazingsql-io-exports)
     rapids_export_find_package_root(BUILD ArrowCUDA [=[${CMAKE_CURRENT_LIST_DIR}]=] blazingsql-io-exports)
     if(ENABLE_PARQUET)
         rapids_export_find_package_root(BUILD Parquet [=[${CMAKE_CURRENT_LIST_DIR}]=] blazingsql-io-exports)
+        rapids_export_find_package_root(BUILD ArrowDataset [=[${CMAKE_CURRENT_LIST_DIR}]=] blazingsql-io-exports)
     endif()
-    rapids_export_find_package_root(BUILD ArrowDataset [=[${CMAKE_CURRENT_LIST_DIR}]=] blazingsql-io-exports)
 
     set(ARROW_FOUND "${ARROW_FOUND}" PARENT_SCOPE)
     set(ARROW_LIBRARIES "${ARROW_LIBRARIES}" PARENT_SCOPE)

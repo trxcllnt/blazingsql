@@ -127,10 +127,10 @@ RUN pip install --upgrade \
     "transformers==4.9.1" \
     "pandas==1.2.5" \
     "cmake-setuptools==0.1.3" \
-    "cupy-cuda112==9.2.0" \
-    "dask==2021.07.1" \
-    "distributed==2021.07.1" \
-    "dask-cuda==21.8.0" \
+    "cupy-cuda114==9.3.0" \
+    "dask==2021.09.1" \
+    "distributed==2021.09.1" \
+    "dask-cuda==21.10.0" \
  \
  && export SCCACHE_REGION="${SCCACHE_REGION}" \
  && export SCCACHE_BUCKET="${SCCACHE_BUCKET}" \
