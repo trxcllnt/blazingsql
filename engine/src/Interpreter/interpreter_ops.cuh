@@ -33,17 +33,17 @@ typedef int64_t temp_gdf_valid_type;  // until its an int32 in cudf
 typedef int16_t column_index_type;
 
 template <typename T>
-CUDA_DEVICE_CALLABLE T getMagicNumber() {
+__device__ inline T getMagicNumber() {
 	return T{};
 }
 
 template <>
-CUDA_DEVICE_CALLABLE int64_t getMagicNumber<int64_t>() {
+__device__ inline int64_t getMagicNumber<int64_t>() {
 	return std::numeric_limits<int64_t>::max() - 13ll;
 }
 
 template <>
-CUDA_DEVICE_CALLABLE double getMagicNumber<double>() {
+__device__ inline double getMagicNumber<double>() {
 	return 1.7976931348623123e+308;
 }
 
@@ -70,7 +70,7 @@ template <typename Timestamp, datetime_component Component>
 struct extract_component_operator {
 	static_assert(cudf::is_timestamp<Timestamp>(), "");
 
-	CUDA_DEVICE_CALLABLE int16_t operator()(Timestamp const ts) const {
+	__device__ inline int16_t operator()(Timestamp const ts) const {
 		using namespace cuda::std::chrono;
 
 		auto days_since_epoch = floor<days>(ts);
@@ -101,60 +101,60 @@ struct extract_component_operator {
 template <datetime_component Component>
 struct launch_extract_component {
 	template <typename Element, std::enable_if_t<!cudf::is_timestamp<Element>()> * = nullptr>
-	CUDA_DEVICE_CALLABLE int16_t operator()(int64_t val) {
+	__device__ inline int16_t operator()(int64_t val) {
 		assert(false);
 		return 0;
 	}
 
 	template <typename Timestamp, std::enable_if_t<cudf::is_timestamp<Timestamp>()> * = nullptr>
-	CUDA_DEVICE_CALLABLE int16_t operator()(int64_t val) {
+	__device__ inline int16_t operator()(int64_t val) {
 		return extract_component_operator<Timestamp, Component>{}(Timestamp{static_cast<typename Timestamp::duration>(val)});
 	}
 };
 
 struct cast_to_timestamp_ns {
 	template <typename Element, std::enable_if_t<!cudf::is_timestamp<Element>()> * = nullptr>
-	CUDA_DEVICE_CALLABLE cudf::timestamp_ns operator()(int64_t val) {
+	__device__ inline cudf::timestamp_ns operator()(int64_t val) {
 		assert(false);
 		return cudf::timestamp_ns{};
 	}
 
 	template <typename Timestamp, std::enable_if_t<cudf::is_timestamp<Timestamp>()> * = nullptr>
-	CUDA_DEVICE_CALLABLE cudf::timestamp_ns operator()(int64_t val) {
+	__device__ inline cudf::timestamp_ns operator()(int64_t val) {
 		return cudf::timestamp_ns{Timestamp{static_cast<typename Timestamp::duration>(val)}};
 	}
 };
 
 struct cast_to_duration_ns {
 	template <typename Element, std::enable_if_t<!cudf::is_duration<Element>()> * = nullptr>
-	CUDA_DEVICE_CALLABLE cudf::duration_ns operator()(int64_t val) {
+	__device__ inline cudf::duration_ns operator()(int64_t val) {
 		assert(false);
 		return cudf::duration_ns{};
 	}
 
 	template <typename Duration, std::enable_if_t<cudf::is_duration<Duration>()> * = nullptr>
-	CUDA_DEVICE_CALLABLE cudf::duration_ns operator()(int64_t val) {
+	__device__ inline cudf::duration_ns operator()(int64_t val) {
 		return cudf::duration_ns{Duration{static_cast<typename Duration::duration>(val)}};
 	}
 };
 
-CUDA_DEVICE_CALLABLE bool is_float_type(cudf::type_id type) {
+__device__ inline bool is_float_type(cudf::type_id type) {
 	return (cudf::type_id::FLOAT32 == type || cudf::type_id::FLOAT64 == type);
 }
 
-CUDA_DEVICE_CALLABLE bool is_timestamp_type(cudf::type_id type) {
+__device__ inline bool is_timestamp_type(cudf::type_id type) {
 	return (cudf::type_id::TIMESTAMP_DAYS == type || cudf::type_id::TIMESTAMP_SECONDS == type ||
 			cudf::type_id::TIMESTAMP_MILLISECONDS == type || cudf::type_id::TIMESTAMP_MICROSECONDS == type ||
 			cudf::type_id::TIMESTAMP_NANOSECONDS == type);
 }
 
-CUDA_DEVICE_CALLABLE bool is_duration_type(cudf::type_id type) {
+__device__ inline bool is_duration_type(cudf::type_id type) {
 	return (cudf::type_id::DURATION_DAYS == type || cudf::type_id::DURATION_SECONDS == type ||
 			cudf::type_id::DURATION_MILLISECONDS == type || cudf::type_id::DURATION_MICROSECONDS == type ||
 			cudf::type_id::DURATION_NANOSECONDS == type);
 }
 
-CUDA_DEVICE_CALLABLE bool is_string_type(cudf::type_id type) {
+__device__ inline bool is_string_type(cudf::type_id type) {
 	return (cudf::type_id::STRING == type);
 }
 
@@ -201,7 +201,7 @@ public:
 
 	}
 
-	CUDA_DEVICE_CALLABLE void operator()(
+	__device__ inline void operator()(
 		cudf::size_type row_index, int64_t total_buffer[], cudf::size_type size, curandState & state) {
 		cudf::bitmask_type * valids_in_buffer =
 			temp_valids_in_buffer + (blockIdx.x * blockDim.x + threadIdx.x) * table.num_columns();
@@ -245,19 +245,19 @@ private:
 	 * @param buffer the local buffer which storse the information that is to be processed
 	 * @param position the position in the local buffer where this data needs to be written
 	 */
-	CUDA_DEVICE_CALLABLE void get_data_from_buffer(int64_t * data, int64_t * buffer, int position) {
+	__device__ inline void get_data_from_buffer(int64_t * data, int64_t * buffer, int position) {
 		*data = *(buffer + (position * blockDim.x + threadIdx.x));
 	}
 
-	CUDA_DEVICE_CALLABLE void get_data_from_buffer(double * data, int64_t * buffer, int position) {
+	__device__ inline void get_data_from_buffer(double * data, int64_t * buffer, int position) {
 		*data = __longlong_as_double(*(buffer + (position * blockDim.x + threadIdx.x)));
 	}
 
-	CUDA_DEVICE_CALLABLE void store_data_in_buffer(int64_t data, int64_t * buffer, int position) {
+	__device__ inline void store_data_in_buffer(int64_t data, int64_t * buffer, int position) {
 		*(buffer + (position * blockDim.x + threadIdx.x)) = data;
 	}
 
-	CUDA_DEVICE_CALLABLE void store_data_in_buffer(double data, int64_t * buffer, int position) {
+	__device__ inline void store_data_in_buffer(double data, int64_t * buffer, int position) {
 		*(buffer + (position * blockDim.x + threadIdx.x)) = __double_as_longlong(data);
 	}
 
@@ -266,7 +266,7 @@ private:
 	 */
 	struct device_ptr_read_into_buffer {
 		template <typename ColType, std::enable_if_t<std::is_integral<ColType>::value> * = nullptr>
-		CUDA_DEVICE_CALLABLE void operator() (cudf::table_device_view& table,
+		__device__ inline void operator() (cudf::table_device_view& table,
 																					cudf::size_type col_index,
 																					cudf::size_type row,
 																					int64_t * buffer) {
@@ -274,7 +274,7 @@ private:
 		}
 
 		template <typename ColType, std::enable_if_t<cudf::is_fixed_point<ColType>()> * = nullptr>
-		CUDA_DEVICE_CALLABLE void operator() (cudf::table_device_view& table,
+		__device__ inline void operator() (cudf::table_device_view& table,
 																					cudf::size_type col_index,
 																					cudf::size_type row,
 																					int64_t * buffer) {
@@ -283,7 +283,7 @@ private:
 		}
 
 		template <typename ColType, std::enable_if_t<std::is_floating_point<ColType>::value> * = nullptr>
-		CUDA_DEVICE_CALLABLE void operator() (cudf::table_device_view& table,
+		__device__ inline void operator() (cudf::table_device_view& table,
 																					cudf::size_type col_index,
 																					cudf::size_type row,
 																					int64_t * buffer) {
@@ -291,7 +291,7 @@ private:
 		}
 
 		template <typename ColType, std::enable_if_t<cudf::is_timestamp<ColType>()> * = nullptr>
-		CUDA_DEVICE_CALLABLE void operator() (cudf::table_device_view& table,
+		__device__ inline void operator() (cudf::table_device_view& table,
 																					cudf::size_type col_index,
 																					cudf::size_type row,
 																					int64_t * buffer) {
@@ -299,14 +299,14 @@ private:
 		}
 
 		template <typename ColType, std::enable_if_t<cudf::is_compound<ColType>()> * = nullptr>
-		CUDA_DEVICE_CALLABLE void operator() (cudf::table_device_view& table,
+		__device__ inline void operator() (cudf::table_device_view& table,
 																					cudf::size_type col_index,
 																					cudf::size_type row,
 																					int64_t * buffer) {
 		}
 
 		template <typename ColType, std::enable_if_t<cudf::is_duration<ColType>()> * = nullptr>
-		CUDA_DEVICE_CALLABLE void operator() (cudf::table_device_view& table,
+		__device__ inline void operator() (cudf::table_device_view& table,
 																					cudf::size_type col_index,
 																					cudf::size_type row,
 																					int64_t * buffer) {
@@ -314,7 +314,7 @@ private:
 		}
 	};
 
-	CUDA_DEVICE_CALLABLE void read_data(cudf::size_type cur_column, int64_t * buffer, cudf::size_type row_index) {
+	__device__ inline void read_data(cudf::size_type cur_column, int64_t * buffer, cudf::size_type row_index) {
 		cudf::type_dispatcher(table.column(cur_column).type(),
 																				device_ptr_read_into_buffer{},
 																				table,
@@ -328,7 +328,7 @@ private:
 	 */
 	struct device_ptr_write_from_buffer {
 		template <typename ColType, std::enable_if_t<std::is_integral<ColType>::value> * = nullptr>
-		CUDA_DEVICE_CALLABLE void operator() (cudf::mutable_table_device_view & out_table,
+		__device__ inline void operator() (cudf::mutable_table_device_view & out_table,
 																					cudf::size_type col_index,
 																					cudf::size_type row,
 																					int64_t * buffer,
@@ -338,7 +338,7 @@ private:
 
 
 		template <typename ColType, std::enable_if_t<cudf::is_fixed_point<ColType>()> * = nullptr>
-		CUDA_DEVICE_CALLABLE void operator() (cudf::mutable_table_device_view & out_table,
+		__device__ inline void operator() (cudf::mutable_table_device_view & out_table,
 																					cudf::size_type col_index,
 																					cudf::size_type row,
 																					int64_t * buffer,
@@ -349,7 +349,7 @@ private:
 
 
 		template <typename ColType, std::enable_if_t<std::is_floating_point<ColType>::value> * = nullptr>
-		CUDA_DEVICE_CALLABLE void operator() (cudf::mutable_table_device_view & out_table,
+		__device__ inline void operator() (cudf::mutable_table_device_view & out_table,
 																					cudf::size_type col_index,
 																					cudf::size_type row,
 																					int64_t * buffer,
@@ -358,7 +358,7 @@ private:
 		}
 
 		template <typename ColType, std::enable_if_t<cudf::is_timestamp<ColType>()> * = nullptr>
-		CUDA_DEVICE_CALLABLE void operator() (cudf::mutable_table_device_view & out_table,
+		__device__ inline void operator() (cudf::mutable_table_device_view & out_table,
 																					cudf::size_type col_index,
 																					cudf::size_type row,
 																					int64_t * buffer,
@@ -367,7 +367,7 @@ private:
 		}
 
 		template <typename ColType, std::enable_if_t<cudf::is_duration<ColType>()> * = nullptr>
-		CUDA_DEVICE_CALLABLE void operator() (cudf::mutable_table_device_view & out_table,
+		__device__ inline void operator() (cudf::mutable_table_device_view & out_table,
 																					cudf::size_type col_index,
 																					cudf::size_type row,
 																					int64_t * buffer,
@@ -376,7 +376,7 @@ private:
 		}
 
 		template <typename ColType, std::enable_if_t<cudf::is_compound<ColType>()> * = nullptr>
-		CUDA_DEVICE_CALLABLE void operator() (cudf::mutable_table_device_view & out_table,
+		__device__ inline void operator() (cudf::mutable_table_device_view & out_table,
 																					cudf::size_type col_index,
 																					cudf::size_type row,
 																					int64_t * buffer,
@@ -384,7 +384,7 @@ private:
 		}
 	};
 
-	CUDA_DEVICE_CALLABLE void write_data(cudf::size_type cur_column, int cur_buffer, int64_t * buffer, cudf::size_type row_index) {
+	__device__ inline void write_data(cudf::size_type cur_column, int cur_buffer, int64_t * buffer, cudf::size_type row_index) {
 		cudf::type_dispatcher(out_table.column(cur_column).type(),
 																				device_ptr_write_from_buffer{},
 																				out_table,
@@ -394,7 +394,7 @@ private:
 																				cur_buffer);
 	}
 
-	CUDA_DEVICE_CALLABLE void read_valid_data(cudf::size_type column_idx, cudf::bitmask_type * buffer, cudf::size_type row_index) {
+	__device__ inline void read_valid_data(cudf::size_type column_idx, cudf::bitmask_type * buffer, cudf::size_type row_index) {
 		const cudf::bitmask_type * valid_in = table.column(column_idx).null_mask();
 		if(valid_in != nullptr) {
 			buffer[column_idx] = valid_in[cudf::word_index(row_index)];
@@ -403,30 +403,30 @@ private:
 		}
 	}
 
-	CUDA_DEVICE_CALLABLE void write_valid_data(cudf::size_type column_idx, cudf::bitmask_type valid_data, cudf::size_type row_index) {
+	__device__ inline void write_valid_data(cudf::size_type column_idx, cudf::bitmask_type valid_data, cudf::size_type row_index) {
 		if(out_table.column(column_idx).nullable()) {
 			cudf::bitmask_type * valid_out = out_table.column(column_idx).null_mask();
 			valid_out[cudf::word_index(row_index)] = valid_data;
 		}
 	}
 
-	CUDA_DEVICE_CALLABLE bool getColumnValid(uint64_t row_valid, int bit_idx) {
+	__device__ inline bool getColumnValid(uint64_t row_valid, int bit_idx) {
 		assert(bit_idx < sizeof(uint64_t)*8);
 		return (row_valid >> bit_idx) & uint64_t{1};
 	}
 
-	CUDA_DEVICE_CALLABLE void setColumnValid(cudf::bitmask_type & row_valid, int bit_idx, bool value) {
+	__device__ inline void setColumnValid(cudf::bitmask_type & row_valid, int bit_idx, bool value) {
 		assert(bit_idx < sizeof(cudf::bitmask_type)*8);
 		row_valid ^= ((-value) ^ row_valid) & (cudf::bitmask_type{1} << bit_idx);
 	}
 
-	CUDA_DEVICE_CALLABLE void setColumnValid(uint64_t & row_valid, int bit_idx, bool value) {
+	__device__ inline void setColumnValid(uint64_t & row_valid, int bit_idx, bool value) {
 		assert(bit_idx < sizeof(uint64_t)*8);
 		row_valid ^= ((-value) ^ row_valid) & (uint64_t{1} << bit_idx);
 	}
 
 	template <typename LeftType>
-	CUDA_DEVICE_CALLABLE LeftType get_scalar_value(cudf::detail::scalar_device_view_base * scalar_ptr) {
+	__device__ inline LeftType get_scalar_value(cudf::detail::scalar_device_view_base * scalar_ptr) {
 		switch (scalar_ptr->type().id())
 		{
 		case cudf::type_id::BOOL8:
@@ -476,7 +476,7 @@ private:
 		}
 	}
 
-	CUDA_DEVICE_CALLABLE void process_operator(
+	__device__ inline void process_operator(
 		size_t op_index, int64_t * buffer, cudf::size_type row_index, uint64_t & row_valids, curandState & state) {
 		cudf::type_id type = input_types_left[op_index];
 		if(is_float_type(type)) {
@@ -487,7 +487,7 @@ private:
 	}
 
 	template <typename LeftType>
-	CUDA_DEVICE_CALLABLE void process_operator_1(
+	__device__ inline void process_operator_1(
 		size_t op_index, int64_t * buffer, cudf::size_type row_index, uint64_t & row_valids, curandState & state) {
 		cudf::type_id type = input_types_right[op_index];
 		if(is_float_type(type)) {
@@ -498,7 +498,7 @@ private:
 	}
 
 	template <typename LeftType, typename RightType>
-	CUDA_DEVICE_CALLABLE void process_operator_2(
+	__device__ inline void process_operator_2(
 		size_t op_index, int64_t * buffer, cudf::size_type row_index, uint64_t & row_valids, curandState & state) {
 		column_index_type left_position = left_input_positions[op_index];
 		column_index_type right_position = right_input_positions[op_index];
@@ -867,7 +867,7 @@ private:
 							// should not reach here, invalid conversion
 							assert(false);
 							break;
-					}	
+					}
 
 					store_data_in_buffer(static_cast<int64_t>(computed.time_since_epoch().count()), buffer, output_position);
 				} else if(oper == operator_type::BLZ_CAST_TIMESTAMP || oper == operator_type::BLZ_CAST_TIMESTAMP_MICROSECONDS
@@ -952,10 +952,10 @@ __global__ void transformKernel(InterpreterFunctor op, cudf::size_type size, cur
 	extern __shared__ int64_t total_buffer[];
 
     int id = threadIdx.x + blockIdx.x * blockDim.x;
-    
+
 
     curandState localState = state[id];
- 
+
 
 	for(cudf::size_type i = (blockIdx.x * blockDim.x + threadIdx.x) * 32; i < size; i += blockDim.x * gridDim.x * 32) {
 		op(i, total_buffer, size, localState);
