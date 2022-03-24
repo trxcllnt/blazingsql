@@ -207,7 +207,7 @@ if(S3_SUPPORT)
 endif()
 # link_directories($ENV{CONDA_PREFIX}/lib)
 
-add_library(blazingsql-io SHARED
+add_library(blazingsql-io
     ${FILESYSTEM_SRC_FILES}
     ${GCS_FILESYSTEM_SRC_FILES}
     ${S3_FILESYSTEM_SRC_FILES}

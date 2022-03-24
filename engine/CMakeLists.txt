@@ -463,7 +463,7 @@ link_directories(${BSQL_BLD_PREFIX}/lib)
 link_directories($ENV{SNAPPY_INSTALL_DIR})
 link_directories($ENV{LZ4_INSTALL_DIR})
 
-add_library(blazingsql-engine SHARED
+add_library(blazingsql-engine
     ${SRC_FILES}
     ${MYSQL_DATABASE_SRC_FILES}
     ${SQLITE_DATABASE_SRC_FILES}
