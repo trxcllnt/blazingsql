@@ -259,12 +259,12 @@ private:
 };
 
 std::unique_ptr<AddressExchanger>
-AddressExchanger::MakeForSender(const std::uint16_t port) {
+inline AddressExchanger::MakeForSender(const std::uint16_t port) {
   return std::make_unique<AddressExchangerForSender>(port);
 }
 
 std::unique_ptr<AddressExchanger>
-AddressExchanger::MakeForReceiver(const std::uint16_t port,
+inline AddressExchanger::MakeForReceiver(const std::uint16_t port,
                                   const char *hostname) {
   return std::make_unique<AddressExchangerForReceiver>(port, hostname);
 }
@@ -278,7 +278,7 @@ static void request_init(void *request)
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-ucp_context_h CreateUcpContext() {
+inline ucp_context_h CreateUcpContext() {
   ucp_config_t *config;
   ucs_status_t status = ucp_config_read(NULL, NULL, &config);
   CheckError(status != UCS_OK, "ucp_config_read");
@@ -307,7 +307,7 @@ ucp_context_h CreateUcpContext() {
   return ucp_context;
 }
 
-ucp_worker_h CreatetUcpWorker(ucp_context_h ucp_context) {
+inline ucp_worker_h CreatetUcpWorker(ucp_context_h ucp_context) {
   ucp_worker_params_t worker_params;
   std::memset(&worker_params, 0, sizeof(worker_params));
   worker_params.field_mask = UCP_WORKER_PARAM_FIELD_THREAD_MODE;
@@ -323,7 +323,7 @@ ucp_worker_h CreatetUcpWorker(ucp_context_h ucp_context) {
   return ucp_worker;
 }
 
-UcpWorkerAddress GetUcpWorkerAddress(ucp_worker_h ucp_worker) {
+inline UcpWorkerAddress GetUcpWorkerAddress(ucp_worker_h ucp_worker) {
   UcpWorkerAddress ucpWorkerAddress;
 
   ucs_status_t status = ucp_worker_get_address(
@@ -351,7 +351,7 @@ static void failure_handler(void *arg, ucp_ep_h, ucs_status_t status) {
   *arg_status = status;
 }
 
-ucp_ep_h CreateUcpEp(ucp_worker_h ucp_worker,
+inline ucp_ep_h CreateUcpEp(ucp_worker_h ucp_worker,
                      const UcpWorkerAddress &ucpWorkerAddress) {
   static ucs_status_t current_status = UCS_OK;
   ucp_ep_params_t ep_params;
