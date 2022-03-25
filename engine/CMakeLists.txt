@@ -132,7 +132,7 @@ option(CUDA_ENABLE_LINE_INFO "Enable the -lineinfo option for nvcc (useful for c
 # - User Options  ------------------------------------------------------------
 
 # Build options
-# option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(BUILD_TESTS "Configure CMake to build tests" ON)
 option(BUILD_BENCHMARKS "Configure CMake to build (google) benchmarks" OFF)
 option(USE_NVTX "Build with NVTX support" ON)

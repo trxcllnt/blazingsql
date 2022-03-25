@@ -50,6 +50,7 @@ message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 ##############################################################################
 # - User Options  ------------------------------------------------------------
 
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(GCS_SUPPORT "Enables support for GCS fileSystem" ON)
 option(S3_SUPPORT "Enables support for S3 fileSystem" ON)
 option(BLAZINGSQL_IO_USE_ARROW_STATIC "Build and statically link Arrow libraries" OFF)
