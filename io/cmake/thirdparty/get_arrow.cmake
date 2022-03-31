@@ -274,7 +274,7 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
 
 endfunction()
 
-set(BLAZINGSQL_IO_VERSION_Arrow 5.0.0)
+set(BLAZINGSQL_IO_VERSION_Arrow 6.0.1)
 
 find_and_configure_arrow(
     ${BLAZINGSQL_IO_VERSION_Arrow}

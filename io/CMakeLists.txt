@@ -29,7 +29,7 @@ include(rapids-find)
 
 rapids_cuda_init_architectures(BLAZINGSQL_IO)
 
-project(BLAZINGSQL_IO VERSION 22.02.00 LANGUAGES CXX)
+project(BLAZINGSQL_IO VERSION 22.06.00 LANGUAGES CXX)
 
 # Write the version header
 include(cmake/modules/version.cmake)
@@ -102,7 +102,7 @@ set(BLAZINGSQL_IO_CUDA_FLAGS "")
 set(BLAZINGSQL_IO_CXX_DEFINITIONS "")
 set(BLAZINGSQL_IO_CUDA_DEFINITIONS "")
 
-list(APPEND BLAZINGSQL_IO_CXX_FLAGS -Wall -Wextra -Wno-unknown-pragmas)
+list(APPEND BLAZINGSQL_IO_CXX_FLAGS -Wall -Wextra -Wno-unknown-pragmas -w)
 
 # set(CMAKE_CXX_STANDARD 17)
 # set(CMAKE_CXX_STANDARD_REQUIRED ON)

@@ -15,7 +15,7 @@
 #=============================================================================
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-    list(APPEND BLAZINGSQL_ENGINE_CXX_FLAGS -Wall -Wextra -Wno-unknown-pragmas)
+    list(APPEND BLAZINGSQL_ENGINE_CXX_FLAGS -Wall -Wextra -Wno-unknown-pragmas -w)
     # -Werror is too strict for blazingsql
     # list(APPEND BLAZINGSQL_ENGINE_CXX_FLAGS -Wall -Wextra -Wno-unknown-pragmas -Werror -Wno-error=deprecated-declarations)
     if(BLAZINGSQL_ENGINE_BUILD_TESTS OR BLAZINGSQL_ENGINE_BUILD_BENCHMARKS)

@@ -17,7 +17,7 @@ include(rapids-find)
 
 rapids_cuda_init_architectures(BLAZINGSQL_ENGINE)
 
-project(BLAZINGSQL_ENGINE VERSION 22.02.00 LANGUAGES C CXX CUDA)
+project(BLAZINGSQL_ENGINE VERSION 22.06.00 LANGUAGES C CXX CUDA)
 
 # Write the version header
 include(cmake/modules/version.cmake)
