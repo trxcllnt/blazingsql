@@ -27,8 +27,8 @@ endif()
 list(APPEND BLAZINGSQL_ENGINE_CUDA_FLAGS --expt-extended-lambda --expt-relaxed-constexpr)
 
 # set warnings as errors
-list(APPEND BLAZINGSQL_ENGINE_CUDA_FLAGS -Werror=cross-execution-space-call)
-list(APPEND BLAZINGSQL_ENGINE_CUDA_FLAGS -Xcompiler=-Wall,-Wextra,-Wno-error=deprecated-declarations)
+list(APPEND BLAZINGSQL_ENGINE_CUDA_FLAGS -Werror=cross-execution-space-call -w)
+list(APPEND BLAZINGSQL_ENGINE_CUDA_FLAGS -Xcompiler=-Wall,-Wextra,-Wno-error=deprecated-declarations,-w)
 # -Werror is too strict for blazingsql
 # list(APPEND BLAZINGSQL_ENGINE_CUDA_FLAGS -Xcompiler=-Wall,-Wextra,-Wno-error=deprecated-declarations,-Werror)
 

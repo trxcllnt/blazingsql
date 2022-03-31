@@ -48,7 +48,7 @@ std::unique_ptr<ral::frame::BlazingTable> orc_parser::parse_batch(
 
 		orc_opts.set_columns(col_names);
 		orc_opts.set_stripes({row_groups});
-		orc_opts.set_decimal_cols_as_float(decimal_cols);
+    orc_opts.set_decimal128_columns(decimal_cols);
 
 		auto result = cudf::io::read_orc(orc_opts);
 

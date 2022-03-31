@@ -30,39 +30,39 @@ enum AggregateKind{
 namespace ral {
 namespace operators {
 
-	inline std::unique_ptr<cudf::aggregation> makeCudfAggregation(AggregateKind input, int offset = 0){
+	inline std::unique_ptr<cudf::reduce_aggregation> makeCudfReduceAggregation(AggregateKind input, int offset = 0){
     switch(input) {
 		case AggregateKind::SUM: {
-			return cudf::make_sum_aggregation<cudf::aggregation>();
+			return cudf::make_sum_aggregation<cudf::reduce_aggregation>();
     }
 		case AggregateKind::MEAN: {
-			return cudf::make_mean_aggregation<cudf::aggregation>();
+			return cudf::make_mean_aggregation<cudf::reduce_aggregation>();
     }
 		case AggregateKind::MIN: {
-			return cudf::make_min_aggregation<cudf::aggregation>();
+			return cudf::make_min_aggregation<cudf::reduce_aggregation>();
     }
 		case AggregateKind::MAX: {
-			return cudf::make_max_aggregation<cudf::aggregation>();
+			return cudf::make_max_aggregation<cudf::reduce_aggregation>();
     }
 		case AggregateKind::COUNT_VALID: {
-			return cudf::make_count_aggregation<cudf::aggregation>(cudf::null_policy::EXCLUDE);
+			return cudf::make_count_aggregation<cudf::reduce_aggregation>(cudf::null_policy::EXCLUDE);
     }
 		case AggregateKind::COUNT_ALL: {
-			return cudf::make_count_aggregation<cudf::aggregation>(cudf::null_policy::INCLUDE);
+			return cudf::make_count_aggregation<cudf::reduce_aggregation>(cudf::null_policy::INCLUDE);
     }
 		case AggregateKind::SUM0: {
-			return cudf::make_sum_aggregation<cudf::aggregation>();
+			return cudf::make_sum_aggregation<cudf::reduce_aggregation>();
     }
 		case AggregateKind::NTH_ELEMENT: {
 			// TODO: https://github.com/BlazingDB/blazingsql/issues/1531
-			return cudf::make_nth_element_aggregation<cudf::aggregation>(offset, cudf::null_policy::INCLUDE);
+			return cudf::make_nth_element_aggregation<cudf::reduce_aggregation>(offset, cudf::null_policy::INCLUDE);
     }
 		case AggregateKind::COUNT_DISTINCT: {
 			/* Currently this conditional is unreachable.
 			Calcite transforms count distincts through the
 			AggregateExpandDistinctAggregates rule, so in fact,
 			each count distinct is replaced by some group by clauses. */
-			return cudf::make_nunique_aggregation<cudf::aggregation>();
+			return cudf::make_nunique_aggregation<cudf::reduce_aggregation>();
 		}
     default:
       throw std::runtime_error(

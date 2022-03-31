@@ -205,7 +205,7 @@ using namespace ral::distribution;
 std::unique_ptr<ral::frame::BlazingTable> compute_groupby_without_aggregations(
 	const ral::frame::BlazingTableView & table, const std::vector<int> & group_column_indices) {
 
-	std::unique_ptr<cudf::table> output = cudf::drop_duplicates(table.view(),
+	std::unique_ptr<cudf::table> output = cudf::unique(table.view(),
 		group_column_indices,
 		cudf::duplicate_keep_option::KEEP_FIRST);
 
@@ -256,7 +256,7 @@ std::unique_ptr<ral::frame::BlazingTable> compute_aggregations_without_groupby(
 			} else {
 				cudf::type_id output_type = get_aggregation_output_type(aggregation_input.type().id(), aggregation_types[i], false);
 				std::unique_ptr<cudf::scalar> reduction_out = cudf::reduce(
-          aggregation_input, makeCudfAggregation(aggregation_types[i]), cudf::data_type(output_type));
+          aggregation_input, makeCudfReduceAggregation(aggregation_types[i]), cudf::data_type(output_type));
 
 				// if this aggregation was a SUM0, and it was not valid, we want it to be a valid 0 instead
 				if (aggregation_types[i] == AggregateKind::SUM0 && !reduction_out->is_valid()){
