@@ -14,7 +14,7 @@
 # limitations under the License.
 #=============================================================================
 
-function(find_and_configure_abseil VERSION)
+function(find_and_configure_abseil VERSION GIT_TAG)
 
     if(TARGET absl::time)
         return()
@@ -36,16 +36,16 @@ function(find_and_configure_abseil VERSION)
         INSTALL_EXPORT_SET blazingsql-io-exports
         CPM_ARGS
             GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
-            GIT_TAG        ${VERSION}
+            GIT_TAG        ${GIT_TAG}
             GIT_SHALLOW    TRUE
             OPTIONS        "BUILD_TESTING OFF"
                            "ABSL_ENABLE_INSTALL ON"
     )
 
-    rapids_export(BUILD absl EXPORT_SET abslTargets)
+    rapids_export(BUILD absl
+             VERSION ${VERSION}
+             EXPORT_SET abslTargets)
 
 endfunction()
 
-set(BLAZINGSQL_ENGINE_MIN_VERSION_abseil "20210324.2")
-
-find_and_configure_abseil(${BLAZINGSQL_ENGINE_MIN_VERSION_abseil})
+find_and_configure_abseil(20210324 20210324.2)
