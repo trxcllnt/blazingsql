@@ -42,9 +42,9 @@ function(find_and_configure_abseil VERSION GIT_TAG)
                            "ABSL_ENABLE_INSTALL ON"
     )
 
-    rapids_export(BUILD absl
-             VERSION ${VERSION}
-             EXPORT_SET abslTargets)
+    if(absl_ADDED)
+      export(EXPORT abslTargets NAMESPACE absl:: FILE "${absl_BINARY_DIR}/abslTargets.cmake")
+    endif()
 
 endfunction()
 
