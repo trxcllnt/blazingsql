@@ -18,7 +18,7 @@
 
 cmake_minimum_required(VERSION 3.20.1 FATAL_ERROR)
 
-file(DOWNLOAD https://raw.githubusercontent.com/rapidsai/rapids-cmake/branch-22.06/RAPIDS.cmake
+file(DOWNLOAD https://raw.githubusercontent.com/rapidsai/rapids-cmake/branch-22.08/RAPIDS.cmake
      ${CMAKE_BINARY_DIR}/RAPIDS.cmake)
 include(${CMAKE_BINARY_DIR}/RAPIDS.cmake)
 include(rapids-cmake)
@@ -29,7 +29,7 @@ include(rapids-find)
 
 rapids_cuda_init_architectures(BLAZINGSQL_IO)
 
-project(BLAZINGSQL_IO VERSION 22.06.00 LANGUAGES CXX)
+project(BLAZINGSQL_IO VERSION 22.08.00 LANGUAGES CXX)
 
 # Write the version header
 include(cmake/modules/version.cmake)
