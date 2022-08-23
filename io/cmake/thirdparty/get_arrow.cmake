@@ -53,7 +53,7 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
         set(ARROW_BUILD_SHARED OFF)
         # Turn off CPM using `find_package` so we always download
         # and make sure we get proper static library
-        set(CPM_DOWNLOAD_ALL TRUE)
+        # set(CPM_DOWNLOAD_ALL TRUE)
     endif()
 
     set(EXTRA_ARROW_OPTIONS "")
