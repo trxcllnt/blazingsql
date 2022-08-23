@@ -24,6 +24,7 @@
 #include <cudf/search.hpp>
 #include <cudf/join.hpp>
 #include <cudf/sorting.hpp>
+#include <cudf/detail/gather.hpp>
 
 namespace ral {
 namespace batch {
@@ -119,12 +120,39 @@ std::unique_ptr<CudfColumn> ComputeWindowKernel::compute_column_from_window_func
                 std::vector<cudf::size_type> right_column_indices(partitioned_table_view.num_columns());
                 std::iota(right_column_indices.begin(), right_column_indices.end(), 0);
 
-                std::unique_ptr<cudf::table> join_table = cudf::inner_join(
-                                                            left_table->view(),
-                                                            partitioned_table_view,
-                                                            left_column_indices,
-                                                            right_column_indices
-                                                            );
+                auto gather = [](
+                  cudf::table_view const& table,
+                  rmm::device_uvector<cudf::size_type> const& map
+                ) {
+                  return cudf::detail::gather(
+                    table,
+                    map,
+                    cudf::out_of_bounds_policy::NULLIFY,
+                    cudf::detail::negative_index_policy::ALLOWED
+                  );
+                };
+
+                auto combine_table_pair = [](
+                  std::unique_ptr<cudf::table>&& left,
+                  std::unique_ptr<cudf::table>&& right
+                ) -> std::unique_ptr<cudf::table> {
+                  auto joined_cols = left->release();
+                  auto right_cols  = right->release();
+                  joined_cols.insert(joined_cols.end(),
+                                    std::make_move_iterator(right_cols.begin()),
+                                    std::make_move_iterator(right_cols.end()));
+                  return std::make_unique<cudf::table>(std::move(joined_cols));
+                };
+
+                auto const [lhs_map, rhs_map] = cudf::inner_join(
+                  left_table->view().select(left_column_indices),
+                  partitioned_table_view.select(right_column_indices)
+                );
+
+                auto join_table = combine_table_pair(
+                  gather(left_table->view(), *lhs_map),
+                  gather(partitioned_table_view, *rhs_map)
+                );
 
                 // Because the values column is unordered, we want to sort it
                 std::vector<cudf::null_order> null_orders(join_table->num_columns(), cudf::null_order::AFTER);

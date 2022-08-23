@@ -6,6 +6,7 @@
 #include <cudf/partitioning.hpp>
 #include <cudf/join.hpp>
 #include <cudf/stream_compaction.hpp>
+#include <cudf/detail/gather.hpp>
 #include "execution_kernels/LogicalFilter.h"
 #include "execution_graph/executor.h"
 #include "cache_machine/CPUCacheData.h"
@@ -393,6 +394,30 @@ std::unique_ptr<ral::frame::BlazingTable> PartwiseJoin::join_set(
 {
 	std::unique_ptr<CudfTable> result_table;
 
+  auto gather = [](
+    cudf::table_view const& table,
+    rmm::device_uvector<cudf::size_type> const& map
+  ) {
+    return cudf::detail::gather(
+      table,
+      map,
+      cudf::out_of_bounds_policy::NULLIFY,
+      cudf::detail::negative_index_policy::ALLOWED
+    );
+  };
+
+  auto combine_table_pair = [](
+    std::unique_ptr<cudf::table>&& left,
+    std::unique_ptr<cudf::table>&& right
+  ) -> std::unique_ptr<cudf::table> {
+    auto joined_cols = left->release();
+    auto right_cols  = right->release();
+    joined_cols.insert(joined_cols.end(),
+                      std::make_move_iterator(right_cols.begin()),
+                      std::make_move_iterator(right_cols.end()));
+    return std::make_unique<cudf::table>(std::move(joined_cols));
+  };
+
 	if (this->join_type == CROSS_JOIN) {
 		result_table = cudf::cross_join(
 			table_left.view(),
@@ -402,12 +427,16 @@ std::unique_ptr<ral::frame::BlazingTable> PartwiseJoin::join_set(
 		bool has_nulls_right = ral::processor::check_if_has_nulls(table_right.view(), right_column_indices);
 		if(this->join_type == INNER_JOIN) {
 			cudf::null_equality equalityType = parseJoinConditionToEqualityTypes(this->condition);
-			result_table = cudf::inner_join(
-				table_left.view(),
-				table_right.view(),
-				this->left_column_indices,
-				this->right_column_indices,
+      auto lhs_table = table_left.view();
+      auto rhs_table = table_right.view();
+			auto const [lhs_map, rhs_map] = cudf::inner_join(
+				lhs_table.select(this->left_column_indices),
+				rhs_table.select(this->right_column_indices),
 				equalityType);
+      result_table = combine_table_pair(
+        gather(lhs_table, *lhs_map),
+        gather(rhs_table, *rhs_map)
+      );
 		} else if(this->join_type == LEFT_JOIN) {
 			//Removing nulls on right key columns before joining
 			std::unique_ptr<CudfTable> table_right_dropna;
@@ -415,12 +444,16 @@ std::unique_ptr<ral::frame::BlazingTable> PartwiseJoin::join_set(
 			if(has_nulls_right){
 				table_right_dropna = cudf::drop_nulls(table_right.view(), right_column_indices);
 			}
-
-			result_table = cudf::left_join(
-				table_left.view(),
-				has_nulls_right ? table_right_dropna->view() : table_right.view(),
-				this->left_column_indices,
-				this->right_column_indices);
+      auto lhs_table = table_left.view();
+      auto rhs_table = (has_nulls_right ? table_right_dropna->view() : table_right.view());
+      auto const [lhs_map, rhs_map] = cudf::left_join(
+				lhs_table.select(left_column_indices),
+				rhs_table.select(right_column_indices)
+      );
+      result_table = combine_table_pair(
+        gather(lhs_table, *lhs_map),
+        gather(rhs_table, *rhs_map)
+      );
 		} else if(this->join_type == RIGHT_JOIN) {
 			//Removing nulls on left key columns before joining
 			std::unique_ptr<CudfTable> table_left_dropna;
@@ -428,23 +461,30 @@ std::unique_ptr<ral::frame::BlazingTable> PartwiseJoin::join_set(
 			if(has_nulls_left){
 				table_left_dropna = cudf::drop_nulls(table_left.view(), left_column_indices);
 			}
-
-			result_table = cudf::left_join(
-				table_right.view(),
-				has_nulls_left ? table_left_dropna->view() : table_left.view(),
-				this->right_column_indices,
-				this->left_column_indices);
-
+      auto lhs_table = table_right.view();
+      auto rhs_table = has_nulls_left ? table_left_dropna->view() : table_left.view();
+      auto const [lhs_map, rhs_map] = cudf::left_join(
+				lhs_table.select(right_column_indices),
+				rhs_table.select(left_column_indices)
+      );
+      result_table = combine_table_pair(
+        gather(lhs_table, *lhs_map),
+        gather(rhs_table, *rhs_map)
+      );
 			// After a right join is performed, we want to make sure the left column keep on the left side of result_table
 			result_table = reordering_columns_due_to_right_join(std::move(result_table), table_right.num_columns());
 
 		} else if(this->join_type == OUTER_JOIN) {
-			result_table = cudf::full_join(
-				table_left.view(),
-				table_right.view(),
-				this->left_column_indices,
-				this->right_column_indices,
+      auto lhs_table = table_left.view();
+      auto rhs_table = table_right.view();
+			auto const [lhs_map, rhs_map] = cudf::full_join(
+				lhs_table.select(left_column_indices),
+				rhs_table.select(right_column_indices),
 				(has_nulls_left && has_nulls_right) ? cudf::null_equality::UNEQUAL : cudf::null_equality::EQUAL);
+      result_table = combine_table_pair(
+        gather(lhs_table, *lhs_map),
+        gather(rhs_table, *rhs_map)
+      );
 		} else {
 			RAL_FAIL("Unsupported join operator");
 		}
