@@ -86,6 +86,11 @@ core
 .cupy/
 .jitify-cache/
 .nv/
+.vscode-server/
+.cmake
+.gnupg
+.gitconfig
+.bash_history
 
 # powerpc
 powerpc/tmp/

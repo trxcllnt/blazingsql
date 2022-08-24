@@ -13,6 +13,7 @@
 #include "execution_kernels/LogicalProject.h"
 #include <regex>
 
+#include <cudf/copying.hpp>
 #include <cudf/aggregation.hpp>
 #include <cudf/sorting.hpp>
 #include <cudf/replace.hpp>
@@ -205,7 +206,8 @@ using namespace ral::distribution;
 std::unique_ptr<ral::frame::BlazingTable> compute_groupby_without_aggregations(
 	const ral::frame::BlazingTableView & table, const std::vector<int> & group_column_indices) {
 
-	std::unique_ptr<cudf::table> output = cudf::unique(table.view(),
+	std::unique_ptr<cudf::table> output = cudf::unique(
+    *cudf::gather(table.view(), *cudf::sorted_order(table.view())),
 		group_column_indices,
 		cudf::duplicate_keep_option::KEEP_FIRST);
 

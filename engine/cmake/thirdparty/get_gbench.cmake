@@ -17,6 +17,7 @@
 function(find_and_configure_gbench)
 
     if(TARGET benchmark::benchmark)
+        set(benchmark_FOUND ON PARENT_SCOPE)
         return()
     endif()
 
@@ -41,6 +42,8 @@ function(find_and_configure_gbench)
     if(NOT TARGET benchmark::benchmark)
         add_library(benchmark::benchmark ALIAS benchmark)
     endif()
+
+    set(benchmark_FOUND ${benchmark_FOUND} PARENT_SCOPE)
 
 endfunction()
 

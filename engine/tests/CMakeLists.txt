@@ -6,59 +6,69 @@
 #pass the dependency libraries as optional arguments using ${ARGN}
 #NOTE the order of libraries matter, so try to link first with the most high level lib
 function(configure_test TEST_NAME Tests_SRCS)
-    include_directories(
-        ${PROJECT_SOURCE_DIR}/src
-        ${PROJECT_SOURCE_DIR}/tests/utilities
-        ${PROJECT_SOURCE_DIR}/thirdparty/jitify
-        $ENV{PREFIX}/include
-    )
+
+    if(BLAZINGSQL_ENGINE_BUILD_ARROW_PYTHON)
+      list(APPEND Tests_SRCS ${PROJECT_SOURCE_DIR}/tests/cython_errors_dummy.cpp)
+    endif()
 
     add_executable(${TEST_NAME}
                    ${Tests_SRCS}
-                   ${PROJECT_SOURCE_DIR}/tests/cython_errors_dummy.cpp
                    ${PROJECT_SOURCE_DIR}/tests/utilities/BlazingUnitTest.cpp)
-    link_directories($ENV{PREFIX}/lib)
+
+    target_compile_options(${TEST_NAME}
+                PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${BLAZINGSQL_ENGINE_CXX_FLAGS}>"
+                        "$<$<COMPILE_LANGUAGE:CUDA>:${BLAZINGSQL_ENGINE_CUDA_FLAGS}>"
+    )
+
+    target_include_directories(${TEST_NAME}
+                       PRIVATE ${PROJECT_SOURCE_DIR}
+                               ${PROJECT_SOURCE_DIR}/src
+                               ${PROJECT_SOURCE_DIR}/tests/utilities
+                               ${PROJECT_SOURCE_DIR}/thirdparty/jitify
+                               $ENV{PREFIX}/include
+    )
+
+    target_link_directories(${TEST_NAME} PRIVATE $ENV{PREFIX}/lib)
 
     target_link_libraries(${TEST_NAME}
-        gmock_main
-        gmock
-        gtest
+        # gmock_main
+        # gmock
+        # gtest
+        GTest::gmock_main
+        GTest::gtest_main
 
-        blazingsql-engine
         ${PYTHON_LIBRARIES}
+        cudf::cudftestutil
+        blazingdb::blazingsql-engine
 
-        blazingdb-io
-        Threads::Threads
+        # zmq
+        # cudart
 
-        cudf
-        zmq
-        cudart
-
-        parquet
-        arrow
-        snappy
-
-        zstd
-        lz4
+        # parquet
+        # arrow
+        # snappy
+        # zstd
+        # lz4
 
         ${S3_LIBRARY}
 
         ${GCS_LIBRARY}
 
-        libboost_filesystem.so
-        libboost_system.so
-        libboost_regex.so
+        # libboost_filesystem.so
+        # libboost_system.so
+        # libboost_regex.so
+        Boost::regex
+        Boost::system
+        Boost::filesystem
 
-        protobuf
+        # protobuf
 
         # Library needed for blazing communication repository (debug)
-        gcov
+        # gcov
 
         # TODO jp c.gonzales make use of standard cmake find_package here (see above)
         #spdlog::spdlog
-        libspdlog.so
-
-        cudftestutil
+        # libspdlog.so
 
         # TODO percy use cmake::find
         ${MYSQL_LIBRARY}
@@ -72,6 +82,12 @@ function(configure_test TEST_NAME Tests_SRCS)
     #register the target as CMake test so we can use ctest for this executable
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endfunction()
+
+# Remove `-Werror` from cudftestutil's interface_compile_options
+get_target_property(cudftest_opts cudf::cudftestutil INTERFACE_COMPILE_OPTIONS)
+string(REPLACE "-Werror;" "" cudftest_opts "${cudftest_opts}")
+string(REPLACE "-Werror," "" cudftest_opts "${cudftest_opts}")
+set_target_properties(cudftestutil PROPERTIES INTERFACE_COMPILE_OPTIONS "${cudftest_opts}")
 
 ## Main ##
 

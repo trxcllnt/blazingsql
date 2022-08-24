@@ -29,3 +29,9 @@ coverage.xml
 
 # Allow .git
 # .git
+
+.vscode-server/
+.cmake
+.gnupg
+.gitconfig
+.bash_history

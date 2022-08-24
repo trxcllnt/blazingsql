@@ -259,13 +259,13 @@ include(cmake/thirdparty/get_cudf.cmake)
 include(cmake/thirdparty/get_jitify.cmake)
 include(cmake/thirdparty/get_ucx.cmake)
 
-# if(BLAZINGSQL_ENGINE_BUILD_TESTS)
-#   include(cmake/thirdparty/get_gtest.cmake)
-# endif()
+if(BLAZINGSQL_ENGINE_BUILD_TESTS)
+  include(cmake/thirdparty/get_gtest.cmake)
+endif()
 
-# if(BLAZINGSQL_ENGINE_BUILD_BENCHMARKS)
-#   include(cmake/thirdparty/get_gbench.cmake)
-# endif()
+if(BLAZINGSQL_ENGINE_BUILD_BENCHMARKS)
+  include(cmake/thirdparty/get_gbench.cmake)
+endif()
 
 # # Include CMake modules
 include(FeatureSummary)
@@ -694,21 +694,23 @@ rapids_export(BUILD blazingsql-engine
     FINAL_CODE_BLOCK code_string
     )
 
-# # Tests
-# if(BUILD_TESTING)
-#     if(GTEST_FOUND)
-#         add_subdirectory(tests)
-#     else()
-#         message(AUTHOR_WARNING "Google C++ Testing Framework (Google Test) not found: automated tests are disabled.")
-#     endif()
-# endif()
+# Tests
+if(BLAZINGSQL_ENGINE_BUILD_TESTS)
+    if(GTest_FOUND)
+        add_subdirectory(tests)
+    else()
+        message(AUTHOR_WARNING "Google C++ Testing Framework (Google Test) not found: automated tests are disabled.")
+    endif()
+endif()
 
-# #Benchmarks
-# if(GBENCHMARK_FOUND)
-#     add_subdirectory(benchmarks)
-# else()
-#     message(AUTHOR_WARNING "Google C++ Benchmarking Framework (Google Benchmark) not found")
-# endif()
+#Benchmarks
+if(BLAZINGSQL_ENGINE_BUILD_BENCHMARKS)
+    if(benchmark_FOUND)
+        add_subdirectory(benchmarks)
+    else()
+        message(AUTHOR_WARNING "Google C++ Benchmarking Framework (Google Benchmark) not found")
+    endif()
+endif()
 
 
 include(ConfigureProductVersion)

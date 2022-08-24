@@ -51,6 +51,7 @@ message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 # - User Options  ------------------------------------------------------------
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+option(BUILD_TESTS "Configure CMake to build tests" ON)
 option(GCS_SUPPORT "Enables support for GCS fileSystem" ON)
 option(S3_SUPPORT "Enables support for S3 fileSystem" ON)
 option(BLAZINGSQL_IO_USE_ARROW_STATIC "Build and statically link Arrow libraries" OFF)
@@ -125,7 +126,6 @@ include(cmake/thirdparty/get_arrow.cmake)
 include(FeatureSummary)
 include(CheckIncludeFiles)
 include(CheckLibraryExists)
-# include(CTest)
 
 # TODO percy jp mario we don't need curl unless we use the storages
 find_package(CURL REQUIRED)
@@ -288,9 +288,11 @@ add_library(blazingdb::blazingsql-io ALIAS blazingsql-io)
 # install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/ DESTINATION include/blazingdb/io FILES_MATCHING PATTERN "*.h")
 
 # # Tests
-# if(BUILD_TESTING)
-#     add_subdirectory(tests)
-# endif()
+if(BUILD_TESTS)
+  include(CTest)
+  include(cmake/thirdparty/get_gtest.cmake)
+  add_subdirectory(tests)
+endif()
 
 ###################################################################################################
 # - install targets -------------------------------------------------------------------------------

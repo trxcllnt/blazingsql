@@ -44,12 +44,6 @@ namespace operators {
 		case AggregateKind::MAX: {
 			return cudf::make_max_aggregation<cudf::reduce_aggregation>();
     }
-		case AggregateKind::COUNT_VALID: {
-			return cudf::make_count_aggregation<cudf::reduce_aggregation>(cudf::null_policy::EXCLUDE);
-    }
-		case AggregateKind::COUNT_ALL: {
-			return cudf::make_count_aggregation<cudf::reduce_aggregation>(cudf::null_policy::INCLUDE);
-    }
 		case AggregateKind::SUM0: {
 			return cudf::make_sum_aggregation<cudf::reduce_aggregation>();
     }

@@ -8,28 +8,27 @@
 function(configure_test TEST_NAME Tests_SRCS)
     add_executable(${TEST_NAME} ${Tests_SRCS})
 
-    link_directories($ENV{CONDA_PREFIX}/lib)
-    include_directories($ENV{CONDA_PREFIX}/include)
-    target_link_libraries(${TEST_NAME}
-        gmock
-        gmock_main
-        gtest
-        blazingdb-io
+    target_link_directories(${TEST_NAME} PRIVATE $ENV{CONDA_PREFIX}/lib)
+    target_include_directories(${TEST_NAME} PRIVATE $ENV{CONDA_PREFIX}/include)
+    target_link_libraries(${TEST_NAME} PRIVATE
+        GTest::gtest_main
+        GTest::gmock_main
+        blazingdb::blazingsql-io
         ${S3_LIBRARY}
         ${GCS_LIBRARY}
-        arrow
+        # arrow
 
-        libabsl_time.so
-        libabsl_str_format_internal.so
-        libabsl_strings.so
-        libabsl_strings_internal.so
-        libabsl_time_zone.so
-        libabsl_base.so
-        libabsl_int128.so
-        libabsl_raw_logging_internal.so
-        libabsl_spinlock_wait.so
-        libabsl_bad_variant_access.so
-        libabsl_civil_time.so
+        absl::time
+        absl::str_format_internal
+        absl::strings
+        absl::strings_internal
+        absl::time_zone
+        absl::base
+        absl::int128
+        absl::raw_logging_internal
+        absl::spinlock_wait
+        absl::bad_variant_access
+        absl::civil_time
     )
 
     set_target_properties(${TEST_NAME} PROPERTIES
@@ -42,6 +41,9 @@ endfunction()
 ## Main ##
 
 enable_testing()
+
+set(GTEST_BOTH_LIBRARIES GTest::gtest_main GTest::gtest)
+set(GMOCK_BOTH_LIBRARIES GTest::gmock_main GTest::gmock)
 
 # Configure unit tests with Google Test
 # -------------------

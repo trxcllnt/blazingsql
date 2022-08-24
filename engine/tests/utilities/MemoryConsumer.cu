@@ -23,7 +23,7 @@ void MemoryConsumer::setOptionsMegaBytes(const std::vector<size_t> & memory_size
 void MemoryConsumer::setOptionsPercentage(const std::vector<float> & memory_percentages, std::chrono::milliseconds delay){
 	size_t free_size;
 	size_t total_size;
-	CUDA_TRY(cudaMemGetInfo(&free_size, &total_size));
+	CUDF_CUDA_TRY(cudaMemGetInfo(&free_size, &total_size));
 
 	this->memory_sizes.resize(memory_percentages.size());
 	std::transform(memory_percentages.cbegin(), memory_percentages.cend(), this->memory_sizes.begin(), [total_size](auto percentage){ return static_cast<size_t>(percentage * total_size); });
