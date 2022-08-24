@@ -104,7 +104,7 @@ void parquet_parser::parse_schema(
 
 	pq_args.enable_convert_strings_to_categories(false);
 	pq_args.enable_use_pandas_metadata(false);
-	pq_args.set_num_rows(1);  // we only need the metadata, so one row is fine
+	pq_args.set_row_groups({{0}});  // we only need the metadata, so one row group is fine
 
 	cudf_io::table_with_metadata table_out = cudf_io::read_parquet(pq_args);
 

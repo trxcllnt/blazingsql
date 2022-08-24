@@ -17,19 +17,33 @@
 function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENABLE_PYTHON ENABLE_PARQUET)
 
     if(BUILD_STATIC)
-        if(TARGET arrow_static AND TARGET arrow_cuda_static AND TARGET arrow_dataset_static)
+        if(TARGET arrow_static AND TARGET parquet_static AND TARGET arrow_cuda_static AND TARGET arrow_dataset_static)
             list(APPEND ARROW_LIBRARIES arrow_static)
             list(APPEND ARROW_LIBRARIES arrow_cuda_static)
-            list(APPEND ARROW_LIBRARIES arrow_dataset_static)
+            add_library(blazingdb::arrow_static ALIAS arrow_static)
+            add_library(blazingdb::arrow_cuda_static ALIAS arrow_cuda_static)
+            if(ENABLE_PARQUET)
+                list(APPEND ARROW_LIBRARIES parquet_static)
+                list(APPEND ARROW_LIBRARIES arrow_dataset_static)
+                add_library(blazingdb::parquet_static ALIAS parquet_static)
+                add_library(blazingdb::arrow_dataset_static ALIAS arrow_dataset_static)
+            endif()
             set(ARROW_FOUND TRUE PARENT_SCOPE)
             set(ARROW_LIBRARIES ${ARROW_LIBRARIES} PARENT_SCOPE)
             return()
         endif()
     else()
-        if(TARGET arrow_shared AND TARGET arrow_cuda_shared AND TARGET arrow_dataset_shared)
+        if(TARGET arrow_shared AND TARGET parquet_shared AND TARGET arrow_cuda_shared AND TARGET arrow_dataset_shared)
             list(APPEND ARROW_LIBRARIES arrow_shared)
             list(APPEND ARROW_LIBRARIES arrow_cuda_shared)
-            list(APPEND ARROW_LIBRARIES arrow_dataset_shared)
+            add_library(blazingdb::arrow_shared ALIAS arrow_shared)
+            add_library(blazingdb::arrow_cuda_shared ALIAS arrow_cuda_shared)
+            if(ENABLE_PARQUET)
+                list(APPEND ARROW_LIBRARIES parquet_shared)
+                list(APPEND ARROW_LIBRARIES arrow_dataset_shared)
+                add_library(blazingdb::parquet_shared ALIAS parquet_shared)
+                add_library(blazingdb::arrow_dataset_shared ALIAS arrow_dataset_shared)
+            endif()
             set(ARROW_FOUND TRUE PARENT_SCOPE)
             set(ARROW_LIBRARIES ${ARROW_LIBRARIES} PARENT_SCOPE)
             return()
@@ -38,7 +52,6 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
 
     set(ARROW_BUILD_SHARED ON)
     set(ARROW_BUILD_STATIC OFF)
-    set(CPMAddOrFindPackage CPMFindPackage)
 
     if(NOT ARROW_ARMV8_ARCH)
         set(ARROW_ARMV8_ARCH "armv8-a")
@@ -73,11 +86,17 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
     # does not have the CUDA driver installed. This must be an env var.
     set(ENV{CUDA_LIB_PATH} "${CUDAToolkit_LIBRARY_DIR}/stubs")
 
+    # Set this so Arrow doesn't add `-Werror` to
+    # CMAKE_CXX_FLAGS when CMAKE_BUILD_TYPE=Debug
+    set(BUILD_WARNING_LEVEL "PRODUCTION")
+    set(BUILD_WARNING_LEVEL "PRODUCTION" PARENT_SCOPE)
+    set(BUILD_WARNING_LEVEL "PRODUCTION" CACHE STRING "" FORCE)
+
     rapids_cpm_find(Arrow ${VERSION}
-        GLOBAL_TARGETS  arrow_shared
-                        parquet_shared
-                        arrow_cuda_shared
-                        arrow_dataset_shared
+        GLOBAL_TARGETS  arrow_shared arrow_static
+                        parquet_shared parquet_static
+                        arrow_cuda_shared arrow_cuda_static
+                        arrow_dataset_shared arrow_dataset_static
         CPM_ARGS
         GIT_REPOSITORY  https://github.com/apache/arrow.git
         GIT_TAG         apache-arrow-${VERSION}
@@ -98,6 +117,7 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
                         ${EXTRA_ARROW_OPTIONS}
                         # Arrow modifies CMake's GLOBAL RULE_LAUNCH_COMPILE unless this is off
                         "ARROW_USE_CCACHE OFF"
+                        "ARROW_POSITION_INDEPENDENT_CODE ON"
                         "ARROW_ARMV8_ARCH ${ARROW_ARMV8_ARCH}"
                         "ARROW_SIMD_LEVEL ${ARROW_SIMD_LEVEL}"
                         "ARROW_BUILD_STATIC ${ARROW_BUILD_STATIC}"
@@ -108,7 +128,8 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
                         "ARROW_GFLAGS_USE_SHARED ${ARROW_BUILD_SHARED}"
                         "ARROW_GRPC_USE_SHARED ${ARROW_BUILD_SHARED}"
                         "ARROW_PROTOBUF_USE_SHARED ${ARROW_BUILD_SHARED}"
-                        "ARROW_ZSTD_USE_SHARED ${ARROW_BUILD_SHARED}")
+                        "ARROW_ZSTD_USE_SHARED ${ARROW_BUILD_SHARED}"
+                        "xsimd_SOURCE AUTO")
 
     set(ARROW_FOUND TRUE)
     set(ARROW_LIBRARIES "")
@@ -119,11 +140,17 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
         if(BUILD_STATIC)
             list(APPEND ARROW_LIBRARIES arrow_static)
             list(APPEND ARROW_LIBRARIES arrow_cuda_static)
-            list(APPEND ARROW_LIBRARIES arrow_dataset_static)
+            if(ENABLE_PARQUET)
+              list(APPEND ARROW_LIBRARIES parquet_static)
+              list(APPEND ARROW_LIBRARIES arrow_dataset_static)
+            endif()
         else()
             list(APPEND ARROW_LIBRARIES arrow_shared)
             list(APPEND ARROW_LIBRARIES arrow_cuda_shared)
-            list(APPEND ARROW_LIBRARIES arrow_dataset_shared)
+            if(ENABLE_PARQUET)
+              list(APPEND ARROW_LIBRARIES parquet_shared)
+              list(APPEND ARROW_LIBRARIES arrow_dataset_shared)
+            endif()
         endif()
 
         if(Arrow_DIR)
@@ -182,10 +209,48 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
           if (TARGET blazingdb::arrow_shared AND (NOT TARGET arrow_shared))
               add_library(arrow_shared ALIAS blazingdb::arrow_shared)
           endif()
+          if (TARGET arrow_shared AND (NOT TARGET blazingdb::arrow_shared))
+              add_library(blazingdb::arrow_shared ALIAS arrow_shared)
+          endif()
           if (TARGET blazingdb::arrow_static AND (NOT TARGET arrow_static))
               add_library(arrow_static ALIAS blazingdb::arrow_static)
           endif()
+          if (TARGET arrow_static AND (NOT TARGET blazingdb::arrow_static))
+              add_library(blazingdb::arrow_static ALIAS arrow_static)
+          endif()
+          if (NOT TARGET arrow::flatbuffers)
+              add_library(arrow::flatbuffers INTERFACE IMPORTED)
+          endif()
+          if (NOT TARGET arrow::hadoop)
+              add_library(arrow::hadoop INTERFACE IMPORTED)
+          endif()
         ]=])
+
+        if(ENABLE_PARQUET)
+          string(
+            APPEND
+            arrow_code_string
+            [=[
+              find_package(Boost)
+              if (NOT TARGET Boost::headers)
+                  add_library(Boost::headers INTERFACE IMPORTED)
+              endif()
+            ]=]
+          )
+        endif()
+
+        if(NOT TARGET xsimd)
+          string(
+            APPEND
+            arrow_code_string
+            "
+              if(NOT TARGET xsimd)
+                add_library(xsimd INTERFACE IMPORTED)
+                target_include_directories(xsimd INTERFACE \"${Arrow_BINARY_DIR}/xsimd_ep/src/xsimd_ep-install/include\")
+              endif()
+            "
+          )
+        endif()
 
         rapids_export(BUILD Arrow
           VERSION ${VERSION}
@@ -198,8 +263,14 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
           if (TARGET blazingdb::arrow_cuda_shared AND (NOT TARGET arrow_cuda_shared))
               add_library(arrow_cuda_shared ALIAS blazingdb::arrow_cuda_shared)
           endif()
+          if (TARGET arrow_cuda_shared AND (NOT TARGET blazingdb::arrow_cuda_shared))
+              add_library(blazingdb::arrow_cuda_shared ALIAS arrow_cuda_shared)
+          endif()
           if (TARGET blazingdb::arrow_cuda_static AND (NOT TARGET arrow_cuda_static))
               add_library(arrow_cuda_static ALIAS blazingdb::arrow_cuda_static)
+          endif()
+          if (TARGET arrow_cuda_static AND (NOT TARGET blazingdb::arrow_cuda_static))
+              add_library(blazingdb::arrow_cuda_static ALIAS arrow_cuda_static)
           endif()
         ]=])
 
@@ -216,8 +287,14 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
               if (TARGET blazingdb::arrow_dataset_shared AND (NOT TARGET arrow_dataset_shared))
                   add_library(arrow_dataset_shared ALIAS blazingdb::arrow_dataset_shared)
               endif()
+              if (TARGET arrow_dataset_shared AND (NOT TARGET blazingdb::arrow_dataset_shared))
+                  add_library(blazingdb::arrow_dataset_shared ALIAS arrow_dataset_shared)
+              endif()
               if (TARGET blazingdb::arrow_dataset_static AND (NOT TARGET arrow_dataset_static))
                   add_library(arrow_dataset_static ALIAS blazingdb::arrow_dataset_static)
+              endif()
+              if (TARGET arrow_dataset_static AND (NOT TARGET blazingdb::arrow_dataset_static))
+                  add_library(blazingdb::arrow_dataset_static ALIAS arrow_dataset_static)
               endif()
             ]=])
 
@@ -232,8 +309,14 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
               if (TARGET blazingdb::parquet_shared AND (NOT TARGET parquet_shared))
                   add_library(parquet_shared ALIAS blazingdb::parquet_shared)
               endif()
+              if (TARGET parquet_shared AND (NOT TARGET blazingdb::parquet_shared))
+                  add_library(blazingdb::parquet_shared ALIAS parquet_shared)
+              endif()
               if (TARGET blazingdb::parquet_static AND (NOT TARGET parquet_static))
                   add_library(parquet_static ALIAS blazingdb::parquet_static)
+              endif()
+              if (TARGET parquet_static AND (NOT TARGET blazingdb::parquet_static))
+                  add_library(blazingdb::parquet_static ALIAS parquet_static)
               endif()
             ]=])
 
@@ -274,7 +357,7 @@ function(find_and_configure_arrow VERSION BUILD_STATIC ENABLE_S3 ENABLE_ORC ENAB
 
 endfunction()
 
-set(BLAZINGSQL_IO_VERSION_Arrow 8.0.0)
+set(BLAZINGSQL_IO_VERSION_Arrow 9.0.0)
 
 find_and_configure_arrow(
     ${BLAZINGSQL_IO_VERSION_Arrow}

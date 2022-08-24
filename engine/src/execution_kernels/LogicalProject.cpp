@@ -46,14 +46,14 @@ std::string like_expression_to_regex_str(const std::string & like_exp) {
 	return (match_start ? "^" : "") + re + (match_end ? "$" : "");
 }
 
-cudf::strings::strip_type map_trim_flag_to_strip_type(const std::string & trim_flag)
+cudf::strings::side_type map_trim_flag_to_strip_side(const std::string & trim_flag)
 {
     if (trim_flag == "BOTH")
-        return cudf::strings::strip_type::BOTH;
+        return cudf::strings::side_type::BOTH;
     else if (trim_flag == "LEADING")
-        return cudf::strings::strip_type::LEFT;
+        return cudf::strings::side_type::LEFT;
     else if (trim_flag == "TRAILING")
-        return cudf::strings::strip_type::RIGHT;
+        return cudf::strings::side_type::RIGHT;
     else
         // Should not reach here
         assert(false);
@@ -299,7 +299,7 @@ std::unique_ptr<cudf::column> evaluate_string_functions(const cudf::table_view &
             }
             if (end_column.has_nulls()) {
               cudf::numeric_scalar<int32_t> end_zero(0);
-              end_temp = cudf::replace_nulls(end_column, end_zero);            
+              end_temp = cudf::replace_nulls(end_column, end_zero);
               end_column = end_temp->view();
             }
             computed_col = cudf::strings::slice_strings(column, start_column, end_column);
@@ -571,7 +571,7 @@ std::unique_ptr<cudf::column> evaluate_string_functions(const cudf::table_view &
 
         std::string trim_flag = StringUtil::removeEncapsulation(arg_tokens[0], "\"");
         std::string to_strip = StringUtil::removeEncapsulation(arg_tokens[1], encapsulation_character);
-        cudf::strings::strip_type enumerated_trim_flag = map_trim_flag_to_strip_type(trim_flag);
+        cudf::strings::side_type enumerated_trim_flag = map_trim_flag_to_strip_side(trim_flag);
 
         cudf::column_view column = table.column(get_index(arg_tokens[2]));
         RAL_EXPECTS(is_type_string(column.type().id()), "TRIM argument must be a column of type string");
