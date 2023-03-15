@@ -402,7 +402,8 @@ std::unique_ptr<ral::frame::BlazingTable> PartwiseJoin::join_set(
       table,
       map,
       cudf::out_of_bounds_policy::NULLIFY,
-      cudf::detail::negative_index_policy::ALLOWED
+      cudf::detail::negative_index_policy::ALLOWED,
+      rmm::cuda_stream_default
     );
   };
 

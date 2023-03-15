@@ -6,6 +6,7 @@
 #include "cache_machine/GPUCacheData.h"
 #include "cache_machine/ConcatCacheData.h"
 #include "execution_graph/executor.h"
+#include "rmm/cuda_stream_view.hpp"
 #include "utilities/CodeTimer.h"
 
 #include "utilities/CommonOperations.h"
@@ -128,7 +129,8 @@ std::unique_ptr<CudfColumn> ComputeWindowKernel::compute_column_from_window_func
                     table,
                     map,
                     cudf::out_of_bounds_policy::NULLIFY,
-                    cudf::detail::negative_index_policy::ALLOWED
+                    cudf::detail::negative_index_policy::ALLOWED,
+                    rmm::cuda_stream_default
                   );
                 };
 

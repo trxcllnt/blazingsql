@@ -22,9 +22,9 @@ struct cudf_string_col {
 static inline std::unique_ptr<cudf::column>
 build_str_cudf_col(cudf_string_col *host_col,
                    const std::vector<cudf::bitmask_type> &null_mask) {
-  auto d_chars = cudf::detail::make_device_uvector_sync(host_col->chars);
-  auto d_offsets = cudf::detail::make_device_uvector_sync(host_col->offsets);
-  auto d_bitmask = cudf::detail::make_device_uvector_sync(null_mask);
+  auto d_chars = cudf::detail::make_device_uvector_sync(host_col->chars, rmm::cuda_stream_default);
+  auto d_offsets = cudf::detail::make_device_uvector_sync(host_col->offsets, rmm::cuda_stream_default);
+  auto d_bitmask = cudf::detail::make_device_uvector_sync(null_mask, rmm::cuda_stream_default);
   return cudf::make_strings_column(d_chars, d_offsets, d_bitmask);
 }
 

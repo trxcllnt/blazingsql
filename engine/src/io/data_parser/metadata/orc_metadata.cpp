@@ -15,7 +15,7 @@ std::basic_string<char> get_typed_vector_str_content(cudf::type_id dtype, std::v
 	return output;
 }
 
-std::vector<int64_t> get_all_values_in_the_same_col( 
+std::vector<int64_t> get_all_values_in_the_same_col(
 	std::vector<std::vector<std::int64_t>> & min_max,
 	std::size_t index) {
 	std::vector<std::int64_t> output_v;
@@ -76,7 +76,7 @@ std::pair< std::vector<char>, std::vector<cudf::size_type> > concat_strings(
 
 	for (std::size_t i = 0; i < vector.size(); i++) {
 		offsets.push_back(vector[i].size());
-        chars.insert(chars.end(), vector[i].begin(), vector[i].end());   
+        chars.insert(chars.end(), vector[i].begin(), vector[i].end());
     }
 
 	offsets[offsets.size() - 1] = chars.size();
@@ -208,11 +208,11 @@ std::unique_ptr<ral::frame::BlazingTable> get_minmax_metadata(
 
 				if (std::holds_alternative<cudf::io::string_statistics>(file_metadata[colIndex].type_specific_stats)) {
 					columns_with_string_metadata.push_back(colIndex);
-				} 
+				}
 				else columns_with_metadata.push_back(colIndex);
 			}
 		}
-		
+
 		metadata_dtypes.push_back(cudf::data_type{cudf::type_id::INT32});
 		metadata_names.push_back("file_handle_index");
 		metadata_dtypes.push_back(cudf::data_type{cudf::type_id::INT32});
@@ -247,7 +247,7 @@ std::unique_ptr<ral::frame::BlazingTable> get_minmax_metadata(
 							if ( std::holds_alternative<cudf::io::string_statistics>(statistics_per_stripe[col_count].type_specific_stats)) {
 								set_min_max_string(this_minmax_metadata_string, statistics_per_stripe[col_count], string_count * 2);
 								string_count++;
-							} 
+							}
 							else {
 								set_min_max(this_minmax_metadata, statistics_per_stripe[col_count], not_string_count * 2);
 								not_string_count++;
@@ -286,8 +286,8 @@ std::unique_ptr<ral::frame::BlazingTable> get_minmax_metadata(
 			std::vector<std::string> vector_str = get_all_str_values_in_the_same_col(minmax_string_metadata, string_count);
 			string_count++;
 			std::pair<std::vector<char>, std::vector<cudf::size_type>> result_pair = concat_strings(vector_str);
-			auto d_chars = cudf::detail::make_device_uvector_sync(result_pair.first);
-			auto d_offsets = cudf::detail::make_device_uvector_sync(result_pair.second);
+			auto d_chars = cudf::detail::make_device_uvector_sync(result_pair.first, rmm::cuda_stream_default);
+			auto d_offsets = cudf::detail::make_device_uvector_sync(result_pair.second, rmm::cuda_stream_default);
 			std::unique_ptr<cudf::column> col = cudf::make_strings_column(d_chars, d_offsets, {}, 0);
 			minmax_metadata_gdf_table[index] = std::move(col);
 		} else {
