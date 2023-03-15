@@ -29,7 +29,7 @@ include(rapids-find)
 
 rapids_cuda_init_architectures(BLAZINGSQL_IO)
 
-project(BLAZINGSQL_IO VERSION 22.10.00 LANGUAGES CXX)
+project(BLAZINGSQL_IO VERSION 22.12.00 LANGUAGES CXX)
 
 # Write the version header
 include(cmake/modules/version.cmake)
